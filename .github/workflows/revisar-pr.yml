@@ -72,6 +72,30 @@ jobs:
             echo "leccion_detectada=false" >> $GITHUB_OUTPUT
           fi
       
+      # 4b. Extraer nombre del estudiante del PR
+      - name: 👤 Extraer nombre del estudiante
+        id: nombre
+        if: steps.detectar.outputs.leccion_detectada == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            
+            // Buscar nombre en el body del PR
+            const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
+            const nombreMatch = body.match(nombreRegex);
+            let nombreEstudiante = pr.user.login; // Default: username de GitHub
+            
+            if (nombreMatch && nombreMatch[1].trim()) {
+              nombreEstudiante = nombreMatch[1].trim();
+              console.log(`👤 Nombre del estudiante: ${nombreEstudiante}`);
+            } else {
+              console.log(`⚠️ No se encontró nombre completo, usando username: ${nombreEstudiante}`);
+            }
+            
+            core.setOutput('nombre', nombreEstudiante);
+      
       # 5. Validar estructura de la lección
       - name: ✅ Validar estructura
         id: validar
@@ -390,13 +414,13 @@ jobs:
       - name: 🎓 Generar certificado
         if: steps.detectar.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
         run: |
-          USERNAME="${{ github.event.pull_request.user.login }}"
-          python3 scripts/generar_certificado.py "${USERNAME}"
+          NOMBRE="${{ steps.nombre.outputs.nombre }}"
+          python3 scripts/generar_certificado.py "${NOMBRE}"
       
       # 13. Subir certificado como artifact
       - name: 📤 Subir certificado
         if: steps.detectar.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: certificado-python-master-${{ github.event.pull_request.user.login }}
+          name: certificado-python-master-${{ steps.nombre.outputs.nombre }}
           path: certificado_*.png

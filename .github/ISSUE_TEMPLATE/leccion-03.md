@@ -6,6 +6,10 @@ labels: ['leccion-03', 'pendiente']
 assignees: ''
 ---
 
+## 📝 Mi información
+
+**Nombre completo:** (para el certificado)
+
 ## 📝 Mi código
 
 Pega tu código aquí:

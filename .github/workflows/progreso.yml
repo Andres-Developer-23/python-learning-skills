@@ -33,12 +33,14 @@ jobs:
           script: |
             let leccion = '';
             let usuario = '';
+            let nombre = '';
             let numero = '';
             
             // Si es un Issue cerrado
             if (context.eventName === 'issues') {
               const issue = context.payload.issue;
               const labels = issue.labels.map(l => l.name);
+              const body = issue.body || '';
               
               // Verificar si tiene label "completada"
               if (!labels.includes('completada')) {
@@ -48,6 +50,15 @@ jobs:
               
               usuario = issue.user.login;
               numero = issue.number.toString();
+              
+              // Extraer nombre del body del Issue
+              const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
+              const nombreMatch = body.match(nombreRegex);
+              if (nombreMatch && nombreMatch[1].trim()) {
+                nombre = nombreMatch[1].trim();
+              } else {
+                nombre = usuario;
+              }
               
               // Detectar lección desde labels
               const leccionMap = {
@@ -70,6 +81,7 @@ jobs:
             // Si es un PR mergeado
             if (context.eventName === 'pull_request') {
               const pr = context.payload.pull_request;
+              const body = pr.body || '';
               
               if (!pr.merged) {
                 console.log('PR no fue mergeado, saltando...');
@@ -78,6 +90,15 @@ jobs:
               
               usuario = pr.user.login;
               numero = pr.number.toString();
+              
+              // Extraer nombre del body del PR
+              const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
+              const nombreMatch = body.match(nombreRegex);
+              if (nombreMatch && nombreMatch[1].trim()) {
+                nombre = nombreMatch[1].trim();
+              } else {
+                nombre = usuario;
+              }
               
               // Detectar lección desde archivos modificados
               const files = await github.rest.pulls.listFiles({
@@ -102,6 +123,7 @@ jobs:
             
             core.setOutput('leccion', leccion);
             core.setOutput('usuario', usuario);
+            core.setOutput('nombre', nombre);
             core.setOutput('numero', numero);
             core.setOutput('fecha', new Date().toISOString().split('T')[0]);
             
@@ -178,6 +200,7 @@ jobs:
         with:
           script: |
             const usuario = '${{ steps.detectar.outputs.usuario }}';
+            const nombre = '${{ steps.detectar.outputs.nombre }}';
             const numero = '${{ steps.detectar.outputs.numero }}';
             
             // Verificar si el estudiante completó todas las lecciones
@@ -191,8 +214,8 @@ jobs:
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  title: `🎓 ¡Felicitaciones ${usuario}! Has completado el curso`,
-                  body: `## 🎉 ¡Felicidades ${usuario}!
+                  title: `🎓 ¡Felicitaciones ${nombre}! Has completado el curso`,
+                  body: `## 🎉 ¡Felicidades ${nombre}!
                   
                   Has completado **todas las lecciones** del curso de Python con GitHub Actions.
                   
@@ -220,6 +243,6 @@ jobs:
                   labels: ['certificado', 'completado']
                 });
                 
-                console.log(`🎓 Issue de felicitación creado para ${usuario}`);
+                console.log(`🎓 Issue de felicitación creado para ${nombre}`);
               }
             }

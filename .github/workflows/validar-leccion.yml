@@ -117,6 +117,20 @@ jobs:
             
             core.setOutput('codigo', codigo);
             console.log(`✅ Código extraído (${codigo.length} caracteres)`);
+            
+            // Extraer nombre completo del estudiante
+            const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
+            const nombreMatch = body.match(nombreRegex);
+            let nombreEstudiante = context.payload.issue.user.login; // Default: username de GitHub
+            
+            if (nombreMatch && nombreMatch[1].trim()) {
+              nombreEstudiante = nombreMatch[1].trim();
+              console.log(`👤 Nombre del estudiante: ${nombreEstudiante}`);
+            } else {
+              console.log(`⚠️ No se encontró nombre completo, usando username: ${nombreEstudiante}`);
+            }
+            
+            core.setOutput('nombre_estudiante', nombreEstudiante);
       
       # Paso 5: Guardar código como solucion.py
       - name: Guardar solucion.py
@@ -276,8 +290,8 @@ jobs:
       - name: Generar certificado
         if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
         run: |
-          USERNAME="${{ github.event.issue.user.login }}"
-          python3 scripts/generar_certificado.py "${USERNAME}"
+          NOMBRE="${{ steps.extraer.outputs.nombre_estudiante }}"
+          python3 scripts/generar_certificado.py "${NOMBRE}"
           echo "certificado_generado=true" >> $GITHUB_OUTPUT
       
       # Paso 12: Subir certificado como artifact
