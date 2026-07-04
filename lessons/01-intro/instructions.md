@@ -11,9 +11,9 @@ Crea un programa que:
 
 ## 💡 Ejemplo
 
-¿Cómo te llamas? Ana
-¡Hola Ana! Bienvenida a Python
-Tu nombre tiene 3 letras
+- ¿Cómo te llamas? Ana
+- ¡Hola Ana! Bienvenida a Python
+- Tu nombre tiene 3 letras
 
 ## 🔧 Requisitos
 - Usa `input()` para preguntar el nombre
