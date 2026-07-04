@@ -5,6 +5,7 @@ Genera un certificado PNG cuando el estudiante completa todas las lecciones.
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -30,8 +31,17 @@ def buscar_fuentes():
     return None
 
 
-def generar_certificado(nombre_estudiante, lecciones_completadas=6, fecha="2024"):
+def generar_certificado(nombre_estudiante, lecciones_completadas=6, fecha=None):
     """Genera un certificado PNG"""
+    # Si no se proporciona fecha, usar la actual
+    if fecha is None:
+        meses = [
+            "enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+        ]
+        ahora = datetime.now()
+        fecha = f"{ahora.day} de {meses[ahora.month - 1]} de {ahora.year}"
+    
     # Configuración
     ANCHO, ALTO = 1200, 850
     COLOR_FONDO = (255, 253, 245)  # Crema claro
