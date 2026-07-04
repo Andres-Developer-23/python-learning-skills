@@ -124,29 +124,89 @@ El curso ofrece **dos métodos** para enviar tus soluciones. Elige el que más t
 <details>
 <summary><b>📋 Guía paso a paso con Pull Requests</b></summary>
 
-#### **Paso 1: Crear el archivo**
-1. Ve a la carpeta de la lección: `lessons/XX-nombre/`
-2. Haz clic en **"Add file"** → **"Create new file"**
-3. Nombre: `solucion.py`
-4. Escribe tu código
-5. Haz clic en **"Commit new file"**
+### 🍴 Primera vez: Fork y clonado
 
-#### **Paso 2: Crear un Pull Request**
-1. Ve a la pestaña **"Pull requests"**
-2. Haz clic en **"New pull request"**
-3. Selecciona: `base: main` y `compare: tu-rama`
-4. Título: "Solución Lección X - [Tu Nombre]"
+#### **Paso 1: Fork del repositorio**
+1. Ve a [github.com/Andres-Developer-23/python-learning-skills](https://github.com/Andres-Developer-23/python-learning-skills)
+2. Haz clic en **"Fork"** (arriba a la derecha)
+3. Elige tu cuenta de GitHub
+
+#### **Paso 2: Clonar tu fork**
+```bash
+git clone https://github.com/TU-USUARIO/python-learning-skills.git
+cd python-learning-skills
+```
+
+#### **Paso 3: Configurar el upstream** (una sola vez)
+```bash
+git remote add upstream https://github.com/Andres-Developer-23/python-learning-skills.git
+```
+
+---
+
+### 📝 Cada lección
+
+#### **Paso 4: Crear una rama**
+```bash
+# Actualizar tu fork
+git checkout main
+git pull upstream main
+git push origin main
+
+# Crear rama para la lección
+git checkout -b leccion-01
+```
+
+#### **Paso 5: Escribir tu código**
+```bash
+# Abre el archivo en tu editor favorito
+code lessons/01-intro/solucion.py
+
+# Prueba localmente
+python lessons/01-intro/solucion.py    # Verifica que se ejecuta
+python -m pytest tests/test_lesson_01.py -v   # Verifica que pasa los tests
+```
+
+#### **Paso 6: Commit y push**
+```bash
+git add lessons/01-intro/solucion.py
+git commit -m "Solución Lección 1 - [Tu Nombre]"
+git push origin leccion-01
+```
+
+#### **Paso 7: Crear el Pull Request**
+1. Ve a tu fork en GitHub
+2. Verás un banner: **"leccion-01 had recent pushes"** → haz clic en **"Compare & pull request"**
+3. Título: `Solución Lección 1 - [Tu Nombre]`
+4. Body: Rellena el template con tu **nombre completo**
 5. Haz clic en **"Create pull request"**
 
-#### **Paso 3: El robot revisa tu código**
-- 🤖 GitHub Actions revisa automáticamente
-- ✅ El robot aprueba o solicita cambios
-- 💬 Recibirás feedback detallado
+---
 
-#### **Paso 4: ¡Lección completada!**
+#### **Paso 8: El robot revisa tu código**
+- 🤖 GitHub Actions revisa automáticamente
+- ✅ Si todo está bien, el PR se aprueba
+- ❌ Si hay errores, recibirás feedback en el PR
+
+#### **Paso 9: ¡Lección completada!**
 - ✅ Cuando el robot apruebe, haz clic en **"Merge pull request"**
 - 🎉 Tu solución queda integrada
 - 🏆 Obtienes el badge de la lección
+- ♻️ Vuelve al **Paso 4** para la siguiente lección
+
+---
+
+### 🖥️ Comandos rápidos (para cada lección)
+
+```bash
+git checkout main && git pull upstream main && git push origin main
+git checkout -b leccion-N
+# ...escribe tu código...
+git add lessons/XX-nombre/solucion.py
+git commit -m "Solución Lección N"
+git push origin leccion-N
+# Abre PR desde GitHub
+```
 
 </details>
 
