@@ -8,8 +8,6 @@ on:
     types: [opened, synchronize, reopened]
   pull_request_review:
     types: [submitted]
-    paths:
-      - 'lessons/**/solucion.py'
 
 jobs:
   revisar-codigo:
@@ -46,7 +44,7 @@ jobs:
         id: detectar
         run: |
           # Obtener los archivos modificados en el PR
-          ARCHIVOS=$(git diff --name-only origin/main...HEAD)
+          ARCHIVOS=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...HEAD)
           echo "📂 Archivos modificados:"
           echo "$ARCHIVOS"
           
@@ -336,7 +334,7 @@ jobs:
               ### 💡 Comandos para probar localmente:
               \`\`\`bash
               # Probar tu código
-              python lessons/${leccion.replace(/^0/, '')}-*/solucion.py
+              python lessons/${leccion}-*/solucion.py
               
               # Ejecutar pruebas
               pytest tests/test_lesson_${leccion}.py -v

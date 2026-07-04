@@ -13,16 +13,9 @@ on:
       - leccion-04
       - leccion-05
       - leccion-06
-  # Cuando alguien comenta en un Issue con label de lección
+  # Cuando alguien comenta en un Issue
   issue_comment:
     types: [created]
-    labels:
-      - leccion-01
-      - leccion-02
-      - leccion-03
-      - leccion-04
-      - leccion-05
-      - leccion-06
 
 # Permisos necesarios
 permissions:
@@ -70,6 +63,22 @@ jobs:
             const issue = context.payload.issue;
             const body = issue.body || '';
             const labels = issue.labels.map(l => l.name);
+            
+            // Verificar si el evento es un comentario del bot (evitar bucle infinito)
+            if (context.eventName === 'issue_comment') {
+              const commentUser = context.payload.comment?.user?.login || '';
+              if (commentUser.includes('github-actions') || commentUser.includes('bot')) {
+                console.log('⚠️ Comentario del bot, saltando para evitar bucle...');
+                return;
+              }
+            }
+            
+            // Verificar que el issue tenga label de lección
+            const hasLessonLabel = labels.some(l => l.startsWith('leccion-'));
+            if (!hasLessonLabel) {
+              console.log('⚠️ Issue sin label de lección, saltando...');
+              return;
+            }
             
             // Detectar lección desde labels
             let leccionNum = '';
