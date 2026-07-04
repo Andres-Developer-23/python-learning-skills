@@ -79,13 +79,6 @@ jobs:
               }
             }
             
-            // Verificar que el issue tenga label de lección
-            const hasLessonLabel = labels.some(l => l.startsWith('leccion-'));
-            if (!hasLessonLabel) {
-              console.log('⚠️ Issue sin label de lección, saltando...');
-              return;
-            }
-            
             // Detectar lección desde labels
             let leccionNum = '';
             let carpeta = '';
