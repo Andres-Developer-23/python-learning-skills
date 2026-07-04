@@ -16,6 +16,13 @@ on:
   # Cuando alguien comenta en un Issue con label de lección
   issue_comment:
     types: [created]
+    labels:
+      - leccion-01
+      - leccion-02
+      - leccion-03
+      - leccion-04
+      - leccion-05
+      - leccion-06
 
 # Permisos necesarios
 permissions:
@@ -77,10 +84,14 @@ jobs:
               'leccion-06': { num: '06', carpeta: '06-final-project' }
             };
             
+            console.log(`🏷️ Labels del issue: ${JSON.stringify(labels)}`);
+            console.log(`📝 Título del issue: "${issue.title}"`);
+            
             for (const [label, info] of Object.entries(leccionMap)) {
               if (labels.includes(label)) {
                 leccionNum = info.num;
                 carpeta = info.carpeta;
+                console.log(`✅ Lección detectada desde label: ${label}`);
                 break;
               }
             }
@@ -88,14 +99,25 @@ jobs:
             // Si no hay label, intentar detectar del título
             if (!leccionNum) {
               const titulo = issue.title || '';
+              console.log('🔍 Intentando detectar lección desde el título...');
               for (const [label, info] of Object.entries(leccionMap)) {
+                const numSinCero = String(parseInt(info.num, 10));
                 if (titulo.toLowerCase().includes(info.num) || 
-                    titulo.toLowerCase().includes(info.carpeta.replace(/-/g, ' '))) {
+                    titulo.toLowerCase().includes(numSinCero) ||
+                    titulo.toLowerCase().includes(info.carpeta.replace(/-/g, ' ')) ||
+                    titulo.toLowerCase().includes(`lecci\u00f3n ${numSinCero}`)) {
                   leccionNum = info.num;
                   carpeta = info.carpeta;
+                  console.log(`✅ Lección detectada desde título: ${label}`);
                   break;
                 }
               }
+            }
+            
+            if (leccionNum) {
+              console.log(`📚 Lección detectada: ${leccionNum} (${carpeta})`);
+            } else {
+              console.log('❌ No se pudo detectar la lección por labels ni título');
             }
             
             if (!leccionNum) {
@@ -105,7 +127,6 @@ jobs:
             
             core.setOutput('leccion', leccionNum);
             core.setOutput('carpeta', carpeta);
-            console.log(`📚 Lección detectada: ${leccionNum} (${carpeta})`);
             
             // Extraer código Python del body
             const codeRegex = /```python\s*\n([\s\S]*?)```/;
@@ -122,8 +143,10 @@ jobs:
               return;
             }
             
-            core.setOutput('codigo', codigo);
             console.log(`✅ Código extraído (${codigo.length} caracteres)`);
+            console.log(`📄 Primeros 50 caracteres: "${codigo.substring(0, 50)}..."`);
+            
+            core.setOutput('codigo', codigo);
             
             // Guardar código como solucion.py
             const dirPath = `lessons/${carpeta}`;
@@ -132,7 +155,8 @@ jobs:
               fs.mkdirSync(dirPath, { recursive: true });
             }
             fs.writeFileSync(`${dirPath}/solucion.py`, codigo);
-            console.log(`📁 Archivo creado: ${dirPath}/solucion.py`);
+            const stats = fs.statSync(`${dirPath}/solucion.py`);
+            console.log(`📁 Archivo escrito: ${dirPath}/solucion.py (${stats.size} bytes)`);
             
             // Extraer nombre completo del estudiante
             const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
