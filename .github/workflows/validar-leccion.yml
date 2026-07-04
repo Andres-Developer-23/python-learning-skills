@@ -42,44 +42,90 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
       
-      # Paso 4: Ejecutar las pruebas
+      # Paso 4: Detectar qué lección se está validando
+      - name: Detectar lección
+        id: detectar
+        run: |
+          LECCION=""
+          if [ -f "lessons/01-intro/solucion.py" ]; then
+            LECCION="01"
+          elif [ -f "lessons/02-variables/solucion.py" ]; then
+            LECCION="02"
+          elif [ -f "lessons/03-conditionals/solucion.py" ]; then
+            LECCION="03"
+          elif [ -f "lessons/04-loops/solucion.py" ]; then
+            LECCION="04"
+          elif [ -f "lessons/05-functions/solucion.py" ]; then
+            LECCION="05"
+          elif [ -f "lessons/06-final-project/solucion.py" ]; then
+            LECCION="06"
+          fi
+          echo "leccion=$LECCION" >> $GITHUB_OUTPUT
+          echo "📚 Lección detectada: $LECCION"
+      
+      # Paso 5: Ejecutar las pruebas de la lección detectada
       - name: Ejecutar pruebas
         id: pruebas
-        continue-on-error: true  # No se detiene si falla
+        if: steps.detectar.outputs.leccion != ''
+        continue-on-error: true
         run: |
-          pytest tests/test_lesson_01.py -v
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "🧪 Ejecutando pruebas para Lección $LECCION..."
+          pytest "tests/test_lesson_${LECCION}.py" -v
       
-      # Paso 5: Comentar el resultado
+      # Paso 6: Comentar el resultado
       - name: Comentar resultado
         uses: actions/github-script@v6
         with:
           script: |
+            const leccion = '${{ steps.detectar.outputs.leccion }}';
             const paso = '${{ steps.pruebas.outcome }}';
             let mensaje = '';
             
-            if (paso === 'success') {
-              mensaje = `✅ ¡Excelente! Tu código funciona perfectamente.
+            const nombresLecciones = {
+              '01': 'Introducción a Python',
+              '02': 'Variables y Tipos de Datos',
+              '03': 'Estructuras de Control',
+              '04': 'Bucles y Listas',
+              '05': 'Funciones',
+              '06': 'Proyecto Final'
+            };
+            
+            const nombreLeccion = nombresLecciones[leccion] || 'Desconocida';
+            
+            if (!leccion) {
+              mensaje = `⚠️ No se detectó ninguna lección válida.
+              
+              ### 📋 Asegúrate de:
+              - Crear el archivo \`solucion.py\` en la carpeta correcta
+              - Seguir la estructura: \`lessons/XX-nombre/solucion.py\`
+              
+              ### 📁 Lecciones disponibles:
+              - lessons/01-intro/
+              - lessons/02-variables/
+              - lessons/03-conditionals/
+              - lessons/04-loops/
+              - lessons/05-functions/
+              - lessons/06-final-project/`;
+            } else if (paso === 'success') {
+              mensaje = `✅ ¡Excelente! Tu código de la Lección ${leccion} funciona perfectamente.
               
               ### 📊 Resultados:
               - ✅ Todas las pruebas pasaron
               - ✅ Tu código es correcto
               
               ### 🎉 ¡Sigue así!
-              Ahora puedes pasar a la Lección 2.
-              
-              ### 💡 Tip:
-              Abre un nuevo Issue con el título "Lección 2" para continuar.`;
+              Ahora puedes pasar a la siguiente lección.`;
             } else {
-              mensaje = `❌ Tu código necesita correcciones.
+              mensaje = `❌ Tu código de la Lección ${leccion} necesita correcciones.
               
               ### 🔍 Problemas encontrados:
               - Revisa los requisitos de la lección
-              - Asegúrate de usar input() y print()
               - Verifica que no hay errores de sintaxis
               
               ### 💡 Para probar localmente:
               \`\`\`bash
-              python lessons/01-intro/solucion.py
+              python lessons/$(echo ${{ steps.detectar.outputs.leccion }} | sed 's/^0*//')-*/solucion.py
               \`\`\`
               
               ### 🆘 ¿Necesitas ayuda?
