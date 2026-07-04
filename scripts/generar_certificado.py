@@ -123,7 +123,7 @@ def generar_certificado(nombre_estudiante, lecciones_completadas=6, fecha=None):
     draw.text(((ANCHO - ancho_texto) // 2, 540), desc2, fill=COLOR_TEXTO, font=fuente_texto)
 
     # Habilidades adquiridas
-    habilidades = "Habilidades: Python, Git, GitHub Actions, Programación"
+    habilidades = "Python • Git • GitHub Actions • Condicionales • Bucles • Funciones"
     bbox = draw.textbbox((0, 0), habilidades, font=fuente_pequeña)
     ancho_texto = bbox[2] - bbox[0]
     draw.text(((ANCHO - ancho_texto) // 2, 610), habilidades, fill=(100, 100, 100), font=fuente_pequeña)
