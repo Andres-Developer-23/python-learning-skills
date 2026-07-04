@@ -261,24 +261,37 @@ flake8 lessons/01-intro/solucion.py
 
 ## 🎓 Certificado
 
-Al completar todas las lecciones, puedes generar tu **certificado de completación** como imagen PNG.
+### ✨ Generación automática
+Al completar la **Lección 6 (Proyecto Final)**, tu certificado se genera **automáticamente** y está disponible como archivo descargable en el resultado del workflow.
 
-### Cómo obtener tu certificado:
+### Generación manual
+También puedes generar tu certificado ejecutando:
 
 ```bash
-# Ejecuta el script con tu nombre
 python3 scripts/generar_certificado.py "Tu Nombre"
-```
-
-**Ejemplo:**
-```bash
-python3 scripts/generar_certificado.py "María García"
 ```
 
 Se generará un archivo `certificado_tu_nombre.png` que puedes:
 - 📱 Compartir en redes sociales
-- 📄 imprimir
+- 📄 Imprimir
 - 💾 Guardar en tu portafolio
+
+---
+
+## ⚡ Sistema de Automatización
+
+El curso funciona **100% automáticamente** gracias a GitHub Actions:
+
+| Acción | Resultado |
+|--------|-----------|
+| Abres un Issue con tu código | ✅ Se valida automáticamente |
+| Tu código pasa las pruebas | ✅ Se aprueba y cierra el Issue |
+| Tu código falla | ❌ Recibes feedback detallado |
+| Completas la Lección 6 | 🎓 Se genera tu certificado |
+| Terminas todas las lecciones | 🎉 Recibes Issue de felicitación |
+
+### Labels automáticas:
+- `pendiente` → `en-revision` → `completada` ✅ o `rechazada` ❌
 
 ---
 
