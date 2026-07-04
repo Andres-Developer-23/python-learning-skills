@@ -1,13 +1,12 @@
-name: "Revisar Python en PR"
+name: "📚 Revisar Lección de Python"
 
 # Se activa cuando:
 on:
   pull_request:
-    # Solo cuando se tocan archivos de las lecciones
     paths:
       - 'lessons/**/solucion.py'
+    types: [opened, synchronize, reopened]
   pull_request_review:
-    # También cuando se pide revisión
     types: [submitted]
 
 jobs:
@@ -17,121 +16,301 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+      actions: read
     
     steps:
       # 1. Descargar el código de la rama del PR
-      - name: Descargar código
+      - name: 📥 Descargar código
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
       
-      # 2. Instalar Python
-      - name: Instalar Python
+      # 2. Configurar Python
+      - name: 🐍 Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+          cache: 'pip'
       
-      # 3. Instalar herramientas de prueba
-      - name: Instalar herramientas
+      # 3. Instalar herramientas
+      - name: 📦 Instalar herramientas
         run: |
           python -m pip install --upgrade pip
-          pip install pytest flake8
+          pip install pytest pytest-cov flake8 black mypy
       
-      # 4. Ejecutar pruebas
-      - name: Ejecutar pruebas
-        id: pruebas
-        continue-on-error: true
+      # 4. Detectar qué lección se modificó
+      - name: 🔍 Detectar lección modificada
+        id: detectar
         run: |
-          # Buscar qué lección cambió
+          # Obtener los archivos modificados en el PR
+          ARCHIVOS=$(git diff --name-only origin/main...HEAD)
           echo "📂 Archivos modificados:"
-          git diff --name-only origin/main...HEAD
+          echo "$ARCHIVOS"
           
-          # Ejecutar pruebas para todas las lecciones
-          pytest tests/ -v --tb=short
+          # Extraer el número de lección
+          LECCION=$(echo "$ARCHIVOS" | grep -oP 'lessons/\K[0-9]+' | head -1)
+          echo "leccion=$LECCION" >> $GITHUB_OUTPUT
+          
+          # Verificar si existe el archivo de la lección
+          if [ -n "$LECCION" ]; then
+            echo "📚 Lección detectada: $LECCION"
+            echo "leccion_detectada=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ No se detectó ninguna lección específica"
+            echo "leccion_detectada=false" >> $GITHUB_OUTPUT
+          fi
       
-      # 5. Verificar estilo de código
-      - name: Verificar estilo
-        id: estilo
+      # 5. Validar estructura de la lección
+      - name: ✅ Validar estructura
+        id: validar
+        if: steps.detectar.outputs.leccion_detectada == 'true'
         continue-on-error: true
         run: |
-          flake8 lessons/ --max-line-length=88 --count --statistics
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "🔍 Validando Lección $LECCION..."
+          
+          # Verificar que existe el archivo de solución
+          if [ -f "lessons/${LECCION}/solucion.py" ]; then
+            echo "✅ Archivo solucion.py encontrado"
+          else
+            echo "❌ No se encontró lessons/${LECCION}/solucion.py"
+            exit 1
+          fi
+          
+          # Verificar que existe el archivo de instrucciones
+          if [ -f "lessons/${LECCION}/instructions.md" ]; then
+            echo "✅ Archivo instructions.md encontrado"
+          else
+            echo "⚠️ No se encontró instructions.md (opcional)"
+          fi
+          
+          # Verificar que el código no está vacío
+          if [ -s "lessons/${LECCION}/solucion.py" ]; then
+            echo "✅ El código no está vacío"
+          else
+            echo "❌ El archivo solucion.py está vacío"
+            exit 1
+          fi
       
-      # 6. Comentar en el PR
-      - name: Comentar resultado
+      # 6. Verificar sintaxis de Python
+      - name: 🔧 Verificar sintaxis
+        id: sintaxis
+        if: steps.detectar.outputs.leccion_detectada == 'true'
+        continue-on-error: true
+        run: |
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "🔍 Verificando sintaxis de la Lección $LECCION..."
+          
+          # Compilar el archivo para verificar sintaxis
+          python -m py_compile "lessons/${LECCION}/solucion.py"
+          echo "✅ Sintaxis correcta"
+          
+          # Ejecutar el archivo para verificar errores en tiempo de ejecución
+          echo "Ana" | python "lessons/${LECCION}/solucion.py"
+          echo "✅ Ejecución exitosa"
+      
+      # 7. Ejecutar pruebas específicas
+      - name: 🧪 Ejecutar pruebas
+        id: pruebas
+        if: steps.detectar.outputs.leccion_detectada == 'true'
+        continue-on-error: true
+        run: |
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "🧪 Ejecutando pruebas para Lección $LECCION..."
+          
+          # Buscar prueba específica de la lección
+          if [ -f "tests/test_lesson_${LECCION}.py" ]; then
+            pytest "tests/test_lesson_${LECCION}.py" -v --tb=short
+          else
+            echo "⚠️ No se encontró tests/test_lesson_${LECCION}.py"
+            # Ejecutar todas las pruebas si existe
+            if [ -d "tests" ]; then
+              pytest tests/ -v --tb=short --ignore=tests/test_template.py
+            fi
+          fi
+      
+      # 8. Verificar estilo de código
+      - name: 🎨 Verificar estilo
+        id: estilo
+        if: steps.detectar.outputs.leccion_detectada == 'true'
+        continue-on-error: true
+        run: |
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "🎨 Verificando estilo de código..."
+          
+          # Verificar estilo con flake8
+          flake8 "lessons/${LECCION}/" --max-line-length=88 --count --statistics
+          echo "✅ Estilo verificado"
+          
+          # Mostrar sugerencias de formato
+          echo "📝 Sugerencias de formato:"
+          black --check "lessons/${LECCION}/" --diff || true
+      
+      # 9. Análisis adicional del código
+      - name: 📊 Analizar código
+        id: analisis
+        if: steps.detectar.outputs.leccion_detectada == 'true'
+        continue-on-error: true
+        run: |
+          LECCION="${{ steps.detectar.outputs.leccion }}"
+          echo "📊 Analizando código de la Lección $LECCION..."
+          
+          # Contar líneas de código
+          LINEAS=$(wc -l < "lessons/${LECCION}/solucion.py")
+          echo "📏 Líneas de código: $LINEAS"
+          
+          # Verificar uso de funciones específicas según la lección
+          CONTENIDO=$(cat "lessons/${LECCION}/solucion.py")
+          
+          case $LECCION in
+            01)
+              echo "🔍 Verificando Lección 1 (Intro)"
+              if echo "$CONTENIDO" | grep -q "input("; then
+                echo "✅ Usa input()"
+              else
+                echo "❌ No usa input()"
+              fi
+              if echo "$CONTENIDO" | grep -q "print("; then
+                echo "✅ Usa print()"
+              else
+                echo "❌ No usa print()"
+              fi
+              if echo "$CONTENIDO" | grep -q "len("; then
+                echo "✅ Usa len()"
+              else
+                echo "❌ No usa len()"
+              fi
+              ;;
+            02)
+              echo "🔍 Verificando Lección 2 (Variables)"
+              # Verificar tipos de variables
+              if echo "$CONTENIDO" | grep -q "="; then
+                echo "✅ Define variables"
+              fi
+              if echo "$CONTENIDO" | grep -q "\[" && echo "$CONTENIDO" | grep -q "\]"; then
+                echo "✅ Usa listas"
+              fi
+              if echo "$CONTENIDO" | grep -q "{" && echo "$CONTENIDO" | grep -q "}"; then
+                echo "✅ Usa diccionarios"
+              fi
+              ;;
+            *)
+              echo "🔍 Análisis general para Lección $LECCION"
+              ;;
+          esac
+      
+      # 10. Generar reporte detallado
+      - name: 📝 Generar feedback detallado
+        id: feedback
         uses: actions/github-script@v6
         with:
           script: |
+            const leccion = '${{ steps.detectar.outputs.leccion }}';
+            const validar = '${{ steps.validar.outcome }}';
+            const sintaxis = '${{ steps.sintaxis.outcome }}';
             const pruebas = '${{ steps.pruebas.outcome }}';
             const estilo = '${{ steps.estilo.outcome }}';
+            const analisis = '${{ steps.analisis.outcome }}';
             const prNumber = context.payload.pull_request.number;
             
-            let mensaje = `## 📊 Revisión de código
+            // Crear emojis para el estado
+            const estado = (resultado) => {
+              if (resultado === 'success') return '✅';
+              if (resultado === 'failure') return '❌';
+              return '⚠️';
+            };
+            
+            let mensaje = `
+            ## 📊 Reporte de Revisión - Lección ${leccion}
+            
+            ### 📋 Verificación de Archivos
+            ${estado(validar)} Estructura de archivos: ${validar === 'success' ? 'Correcta' : validar === 'failure' ? 'Incorrecta' : 'No evaluada'}
+            
+            ### 🔧 Sintaxis y Ejecución
+            ${estado(sintaxis)} Sintaxis: ${sintaxis === 'success' ? '✅ Válida' : sintaxis === 'failure' ? '❌ Errores' : 'No evaluada'}
+            
+            ### 🧪 Pruebas Automáticas
+            ${estado(pruebas)} Pruebas: ${pruebas === 'success' ? '✅ Todas pasaron' : pruebas === 'failure' ? '❌ Fallaron' : 'No ejecutadas'}
+            
+            ### 🎨 Estilo de Código
+            ${estado(estilo)} Estilo: ${estilo === 'success' ? '✅ Cumple estándares' : estilo === 'failure' ? '⚠️ Mejorable' : 'No evaluado'}
+            
+            ### 📊 Análisis de Código
+            ${estado(analisis)} Análisis: ${analisis === 'success' ? '✅ Completo' : analisis === 'failure' ? '⚠️ Revisar' : 'No evaluado'}
             `;
             
-            // Resultado de pruebas
-            if (pruebas === 'success') {
-              mensaje += `### ✅ Pruebas: PASARON
-              - Todas las pruebas se ejecutaron correctamente
-              - Tu código funciona como esperamos
-              `;
-            } else {
-              mensaje += `### ❌ Pruebas: FALLARON
-              - Revisa los errores en la pestaña "Checks"
-              - Asegúrate de que tu código cumple los requisitos
-              `;
-            }
-            
-            // Resultado de estilo
-            if (estilo === 'success') {
-              mensaje += `### ✅ Estilo de código: CORRECTO
-              - Sigue las buenas prácticas de Python
-              - Código limpio y legible
-              `;
-            } else {
-              mensaje += `### ⚠️ Estilo de código: MEJORABLE
-              - Revisa el formato de tu código
-              - Usa nombres descriptivos
-              `;
-            }
-            
-            // Resumen
-            if (pruebas === 'success' && estilo === 'success') {
+            // Añadir feedback específico según resultados
+            if (sintaxis === 'success' && pruebas === 'success' && estilo === 'success') {
               mensaje += `
-              ## 🎉 ¡Excelente trabajo!
+              ## 🎉 ¡Excelente trabajo, estudiante!
               
-              ### 📝 Tu código está perfecto. Puedes fusionar este PR.
+              ### 🏆 Has completado la Lección ${leccion} exitosamente.
               
-              ### 🏆 Siguiente paso:
-              - Abre un nuevo PR para la siguiente lección
-              - O completa el desafío extra
+              ### 💡 Lo que hiciste bien:
+              - ✅ Código sintácticamente correcto
+              - ✅ Todas las pruebas pasaron
+              - ✅ Buen estilo de codificación
               
-              ### 📚 Recursos:
-              - [Documentación de Python](https://docs.python.org/3/)
-              - [Guía de estilo PEP 8](https://pep8.org/)
+              ### 📚 Siguientes pasos:
+              1. Fusiona este PR
+              2. Crea un nuevo branch para la Lección ${parseInt(leccion) + 1}
+              3. Continúa aprendiendo Python
+              
+              ### 🌟 Extra Challenge:
+              ¿Puedes mejorar tu código agregando manejo de errores?
               `;
             } else {
               mensaje += `
               ## 🔧 Sugerencias para mejorar
               
               ### 📋 Lista de verificación:
-              - [ ] Revisa la sintaxis de tu código
-              - [ ] Verifica que usas las funciones correctas
-              - [ ] Prueba tu código localmente
-              - [ ] Corrige los errores mostrados
+              `;
               
-              ### 💡 Comandos útiles:
+              if (validar !== 'success') {
+                mensaje += `- [ ] Asegúrate de que el archivo se llame \`solucion.py\` en la carpeta correcta\n`;
+              }
+              if (sintaxis !== 'success') {
+                mensaje += `- [ ] Revisa la sintaxis de Python (corchetes, paréntesis, comillas)\n`;
+              }
+              if (pruebas !== 'success') {
+                mensaje += `- [ ] Verifica que tu código cumpla con los requisitos de la lección\n`;
+              }
+              if (estilo !== 'success') {
+                mensaje += `- [ ] Mejora el formato de tu código (espacios, nombres, etc.)\n`;
+              }
+              
+              mensaje += `
+              ### 💡 Comandos para probar localmente:
               \`\`\`bash
-              # Probar localmente
-              python lessons/01-intro/solucion.py
+              # Probar tu código
+              python lessons/${leccion}/solucion.py
               
               # Ejecutar pruebas
-              pytest tests/test_lesson_01.py -v
+              pytest tests/test_lesson_${leccion}.py -v
               
               # Verificar estilo
-              flake8 lessons/01-intro/solucion.py
+              flake8 lessons/${leccion}/solucion.py
               \`\`\`
+              
+              ### 🆘 ¿Necesitas ayuda?
+              Puedes pedir ayuda en los comentarios del PR.
               `;
             }
+            
+            // Añadir tabla de progreso
+            mensaje += `
+            ## 📈 Progreso del Curso
+            
+            | Lección | Estado |
+            |---------|--------|
+            | 1 - Introducción | ${leccion === '1' ? '🔄 En revisión' : '✅ Completada'} |
+            | 2 - Variables | ${leccion === '2' ? '🔄 En revisión' : leccion > '2' ? '✅ Completada' : '⏳ Pendiente'} |
+            | 3 - Condicionales | ${leccion === '3' ? '🔄 En revisión' : leccion > '3' ? '✅ Completada' : '⏳ Pendiente'} |
+            | 4 - Bucles | ${leccion === '4' ? '🔄 En revisión' : leccion > '4' ? '✅ Completada' : '⏳ Pendiente'} |
+            | 5 - Funciones | ${leccion === '5' ? '🔄 En revisión' : leccion > '5' ? '✅ Completada' : '⏳ Pendiente'} |
+            | 6 - Proyecto Final | ${leccion === '6' ? '🔄 En revisión' : leccion > '6' ? '✅ Completada' : '⏳ Pendiente'} |
+            `;
             
             // Crear comentario en el PR
             github.rest.issues.createComment({
@@ -140,32 +319,58 @@ jobs:
               repo: context.repo.repo,
               body: mensaje
             });
+            
+            // Guardar resultados para la decisión automática
+            core.setOutput('sintaxis_ok', sintaxis === 'success');
+            core.setOutput('pruebas_ok', pruebas === 'success');
+            core.setOutput('estilo_ok', estilo === 'success');
       
-      # 7. Aprobar o solicitar cambios automáticamente
-      - name: Decisión automática
+      # 11. Decisión automática (Aprobar o Solicitar cambios)
+      - name: 🤖 Decisión automática
         if: github.event.pull_request.draft == false
         uses: actions/github-script@v6
         with:
           script: |
-            const pruebas = '${{ steps.pruebas.outcome }}';
+            const sintaxisOk = '${{ steps.feedback.outputs.sintaxis_ok }}' === 'true';
+            const pruebasOk = '${{ steps.feedback.outputs.pruebas_ok }}' === 'true';
+            const estiloOk = '${{ steps.feedback.outputs.estilo_ok }}' === 'true';
             const prNumber = context.payload.pull_request.number;
             
-            // Si las pruebas pasan, aprobar el PR
-            if (pruebas === 'success') {
+            // Decidir si aprueba o solicita cambios
+            const todoOk = sintaxisOk && pruebasOk && estiloOk;
+            
+            if (todoOk) {
+              // Aprobar el PR
               github.rest.pulls.createReview({
                 pull_number: prNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: '✅ ¡Aprobado automáticamente! Todas las pruebas pasaron.',
+                body: '✅ **¡Aprobado automáticamente!** 🎉\n\nTodas las verificaciones pasaron exitosamente. ¡Excelente trabajo!',
                 event: 'APPROVE'
               });
             } else {
-              // Si fallan, solicitar cambios
+              // Solicitar cambios
+              let razones = [];
+              if (!sintaxisOk) razones.push('❌ Problemas de sintaxis');
+              if (!pruebasOk) razones.push('❌ Pruebas fallaron');
+              if (!estiloOk) razones.push('⚠️ Estilo mejorable');
+              
               github.rest.pulls.createReview({
                 pull_number: prNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: '❌ Solicito cambios. Revisa los errores.',
+                body: `❌ **Solicito cambios necesarios**\n\n### Problemas encontrados:\n${razones.map(r => `- ${r}`).join('\n')}\n\nRevisa el reporte detallado arriba y corrige los errores.`,
                 event: 'REQUEST_CHANGES'
               });
             }
+      
+      # 12. Notificar en Discord (opcional)
+      - name: 💬 Notificar en Discord
+        if: always() && github.event.pull_request.merged == true
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            🎉 **¡Nueva lección completada!**
+            Estudiante: ${{ github.event.pull_request.user.login }}
+            Lección: ${{ steps.detectar.outputs.leccion }}
+            PR: ${{ github.event.pull_request.html_url }}
