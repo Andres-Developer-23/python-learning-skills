@@ -60,6 +60,7 @@ Este es un curso **gratuito e interactivo** de Python donde:
 | [**Lección 4**](lessons/04-loops/instructions.md) | Bucles y Listas | ⭐⭐ Intermedio | 30-50 min | 🔓 **Disponible** |
 | [**Lección 5**](lessons/05-functions/instructions.md) | Funciones | ⭐⭐⭐ Avanzado | 30-50 min | 🔓 **Disponible** |
 | [**Lección 6**](lessons/06-final-project/instructions.md) | Proyecto Final | ⭐⭐⭐⭐⭐ Experto | 45-90 min | 🔓 **Disponible** |
+| [**Lección 7**](lessons/07-testing/instructions.md) | Testing con Python | ⭐⭐⭐ Avanzado | 30-50 min | 🆕 **Nueva** |
 
 ---
 

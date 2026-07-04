@@ -17,6 +17,7 @@ on:
       - leccion-04
       - leccion-05
       - leccion-06
+      - leccion-07
   # Cuando alguien comenta en un Issue
   issue_comment:
     types: [created]
@@ -36,6 +37,7 @@ env:
     leccion-04:04-loops
     leccion-05:05-functions
     leccion-06:06-final-project
+    leccion-07:07-testing
 
 jobs:
   validar-codigo:
@@ -94,7 +96,8 @@ jobs:
               'leccion-03': { num: '03', carpeta: '03-conditionals' },
               'leccion-04': { num: '04', carpeta: '04-loops' },
               'leccion-05': { num: '05', carpeta: '05-functions' },
-              'leccion-06': { num: '06', carpeta: '06-final-project' }
+              'leccion-06': { num: '06', carpeta: '06-final-project' },
+              'leccion-07': { num: '07', carpeta: '07-testing' }
             };
             
             console.log(`🏷️ Labels del issue: ${JSON.stringify(labels)}`);

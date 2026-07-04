@@ -71,7 +71,8 @@ jobs:
                 'leccion-03': '03',
                 'leccion-04': '04',
                 'leccion-05': '05',
-                'leccion-06': '06'
+                'leccion-06': '06',
+                'leccion-07': '07'
               };
               
               for (const [label, num] of Object.entries(leccionMap)) {

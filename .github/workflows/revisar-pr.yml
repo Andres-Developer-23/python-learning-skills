@@ -60,6 +60,7 @@ jobs:
             04) CARPETA="04-loops" ;;
             05) CARPETA="05-functions" ;;
             06) CARPETA="06-final-project" ;;
+            07) CARPETA="07-testing" ;;
             *) CARPETA="" ;;
           esac
           echo "carpeta=$CARPETA" >> $GITHUB_OUTPUT
