@@ -179,7 +179,6 @@ jobs:
               // Verificar si completó todas
               if (estudiante.lecciones_completadas.length === 6) {
                 console.log(`🎉 ${usuario} ha completado TODAS las lecciones!`);
-                estudiante.certificado_generado = true;
                 estudiante.fecha_completado = fecha;
               }
             }
@@ -207,56 +206,4 @@ jobs:
           git add PROGRESS.json
           git diff --staged --quiet || (git commit -m "chore: actualizar progreso - Lección ${{ steps.detectar.outputs.leccion }} completada por ${{ steps.detectar.outputs.usuario }}" && git pull --rebase && git push)
       
-      # 6. Notificar si completó todas las lecciones
-      - name: 🎓 Notificar certificado
-        if: steps.detectar.outputs.leccion == '06'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const usuario = '${{ steps.detectar.outputs.usuario }}';
-            const nombre = '${{ steps.detectar.outputs.nombre }}';
-            const numero = '${{ steps.detectar.outputs.numero }}';
-            
-            // Verificar si el estudiante completó todas las lecciones
-            const fs = require('fs');
-            if (fs.existsSync('PROGRESS.json')) {
-              const progreso = JSON.parse(fs.readFileSync('PROGRESS.json', 'utf8'));
-              const estudiante = progreso.estudiantes?.[usuario];
-              
-              if (estudiante?.lecciones_completadas?.length === 6) {
-                // Crear Issue de felicitación
-                await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: `🎓 ¡Felicitaciones ${nombre}! Has completado el curso`,
-                  body: `## 🎉 ¡Felicidades ${nombre}!
-                  
-                  Has completado **todas las lecciones** del curso de Python con GitHub Actions.
-                  
-                  ### 📊 Tu progreso:
-                  - ✅ Lección 1: Introducción a Python
-                  - ✅ Lección 2: Variables y Tipos de Datos
-                  - ✅ Lección 3: Estructuras de Control
-                  - ✅ Lección 4: Bucles y Listas
-                  - ✅ Lección 5: Funciones
-                  - ✅ Lección 6: Proyecto Final
-                  
-                  ### 🎓 Tu certificado:
-                  Tu certificado de completación está disponible como artifact del workflow de la Lección 6.
-                  
-                  ### 🏆 Logros desbloqueados:
-                  - 🐍 Primer Programa
-                  - 📊 Maestro de Variables
-                  - 🔀 Control de Flujo
-                  - 🔄 Bucle Pro
-                  - ⚡ Función Cumplida
-                  - 🎯 **Python Master** 👑
-                  
-                  ---
-                  *¡Gracias por completar el curso! Sigue practicando y aprendiendo.*`,
-                  labels: ['certificado', 'completado']
-                });
-                
-                console.log(`🎓 Issue de felicitación creado para ${nombre}`);
-              }
-            }
+

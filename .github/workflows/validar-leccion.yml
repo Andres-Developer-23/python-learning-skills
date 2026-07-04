@@ -58,7 +58,7 @@ jobs:
       - name: Instalar herramientas
         run: |
           python -m pip install --upgrade pip
-          pip install pytest Pillow
+          pip install pytest
       
       # Paso 4: Extraer código del Issue y detectar lección
       - name: Extraer código y detectar lección
@@ -325,12 +325,6 @@ jobs:
                 labels: newLabels
               });
               
-              // Generar certificado si es lección 6
-              if (leccion === '06') {
-                const username = context.payload.issue.user.login;
-                core.setOutput('generar_certificado', 'true');
-                core.setOutput('username', username);
-              }
             } else {
               newLabels.push('rechazada');
               
@@ -342,18 +336,4 @@ jobs:
               });
             }
       
-      # Paso 10: Generar certificado si es lección 6 y aprueba
-      - name: Generar certificado
-        if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
-        run: |
-          NOMBRE="${{ steps.extraer.outputs.nombre_estudiante }}"
-          python3 scripts/generar_certificado.py "${NOMBRE}"
-          echo "certificado_generado=true" >> $GITHUB_OUTPUT
-      
-      # Paso 11: Subir certificado como artifact
-      - name: Subir certificado
-        if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: certificado-python-master
-          path: certificado_*.png
+

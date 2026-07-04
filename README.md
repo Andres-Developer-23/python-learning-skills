@@ -37,7 +37,6 @@ Este es un curso **gratuito e interactivo** de Python donde:
 - ✅ Resuelves ejercicios prácticos
 - ✅ Recibes **feedback automático** de un robot (GitHub Actions)
 - ✅ Aprendes a tu propio ritmo
-- ✅ Obtienes un **certificado** al finalizar
 - ✅ Desarrollas habilidades de programación reales
 - ✅ Aprendes a usar Git y GitHub (habilidades muy valoradas)
 
@@ -87,8 +86,7 @@ El curso ofrece **dos métodos** para enviar tus soluciones. Elige el que más t
 
 #### **Paso 2: Escribir tu código**
 1. Lee las instrucciones de la lección
-2. Escribe tu **nombre completo** (para el certificado)
-3. Escribe tu código en el bloque de código de Python:
+2. Escribe tu código en el bloque de código de Python:
    ```python
    # Tu código aquí
    nombre = input("¿Cómo te llamas? ")
@@ -178,8 +176,7 @@ git push origin leccion-01
 1. Ve a tu fork en GitHub
 2. Verás un banner: **"leccion-01 had recent pushes"** → haz clic en **"Compare & pull request"**
 3. Título: `Solución Lección 1 - [Tu Nombre]`
-4. Body: Rellena el template con tu **nombre completo**
-5. Haz clic en **"Create pull request"**
+4. Haz clic en **"Create pull request"**
 
 ---
 
@@ -233,8 +230,7 @@ git push origin leccion-N
 
 ### 📝 Paso rápido:
 1. Abre un Issue con el template de la lección
-2. Escribe tu **nombre completo** (para el certificado)
-3. Pega tu código Python
+2. Pega tu código Python
 4. ¡El robot valida automáticamente!
 
 ### 🐍 Lección 1: Tu primer programa en Python
@@ -277,12 +273,6 @@ print("Tu nombre tiene " + str(len(nombre)) + " letras")
 ---
 
 ## 🆘 Solución de Problemas
-
-### ❌ "No se recibió certificado"
-**Solución:**
-- Asegúrate de escribir tu **nombre completo** en el Issue/PR
-- El campo debe estar como: `**Nombre completo:** Tu Nombre`
-- Si no lo escribiste, se usará tu username de GitHub
 
 ### ❌ Error: "No se encontró el archivo"
 **Solución:**
@@ -330,26 +320,7 @@ flake8 lessons/01-intro/solucion.py
 | 🔀 Control de Flujo | Completar Lección 3 | 🥈 | Badge de intermedio |
 | 🔄 Bucle Pro | Completar Lección 4 | 🥇 | Badge de avanzado |
 | ⚡ Función Cumplida | Completar Lección 5 | 🥇 | Badge de avanzado |
-| 🎯 Python Master | Completar Proyecto Final | 👑 | Badge de experto + Certificado |
-
----
-
-## 🎓 Certificado
-
-### ✨ Generación automática
-Al completar la **Lección 6 (Proyecto Final)**, tu certificado se genera **automáticamente** y está disponible como archivo descargable en el resultado del workflow.
-
-### Generación manual
-También puedes generar tu certificado ejecutando:
-
-```bash
-python3 scripts/generar_certificado.py "Tu Nombre"
-```
-
-Se generará un archivo `certificado_tu_nombre.png` que puedes:
-- 📱 Compartir en redes sociales
-- 📄 Imprimir
-- 💾 Guardar en tu portafolio
+| 🎯 Python Master | Completar Proyecto Final | 👑 | Badge de experto |
 
 ---
 
@@ -362,7 +333,6 @@ El curso funciona **100% automáticamente** gracias a GitHub Actions:
 | Abres un Issue con tu código | ✅ Se valida automáticamente |
 | Tu código pasa las pruebas | ✅ Se aprueba y cierra el Issue |
 | Tu código falla | ❌ Recibes feedback detallado |
-| Completas la Lección 6 | 🎓 Se genera tu certificado |
 | Terminas todas las lecciones | 🎉 Recibes Issue de felicitación |
 
 ### Labels automáticas:

@@ -37,7 +37,7 @@ jobs:
       - name: 📦 Instalar herramientas
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov flake8 black Pillow
+          pip install pytest pytest-cov flake8 black
       
       # 4. Detectar qué lección se modificó
       - name: 🔍 Detectar lección modificada
@@ -309,7 +309,7 @@ jobs:
               1. Fusiona este PR
               2. Continúa aprendiendo Python
               
-              ${leccion === '6' ? '### 🎓 ¡Felicidades! Has completado el curso completo.\nTu certificado está disponible como artifact del workflow.' : ''}
+              ${leccion === '6' ? '### 🎓 ¡Felicidades! Has completado el curso completo.' : ''}
               `;
             } else {
               mensaje += `
@@ -411,17 +411,4 @@ jobs:
               });
             }
       
-      # 12. Generar certificado si es lección 6 y aprueba
-      - name: 🎓 Generar certificado
-        if: steps.detectar.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
-        run: |
-          NOMBRE="${{ steps.nombre.outputs.nombre }}"
-          python3 scripts/generar_certificado.py "${NOMBRE}"
-      
-      # 13. Subir certificado como artifact
-      - name: 📤 Subir certificado
-        if: steps.detectar.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: certificado-python-master-${{ steps.nombre.outputs.nombre }}
-          path: certificado_*.png
+

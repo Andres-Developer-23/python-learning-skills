@@ -4,5 +4,3 @@ pytest-cov>=4.0
 flake8>=6.0
 black>=23.0
 
-# Dependencias para certificados
-Pillow>=10.0

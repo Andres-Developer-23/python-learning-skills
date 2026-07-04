@@ -8,7 +8,7 @@ assignees: ''
 
 ## 📝 Mi información
 
-**Nombre completo:** (para el certificado)
+**Nombre completo:**
 
 ## 📝 Mi código
 
