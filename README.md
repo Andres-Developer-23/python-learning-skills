@@ -85,7 +85,8 @@ El curso ofrece **dos métodos** para enviar tus soluciones. Elige el que más t
 
 #### **Paso 2: Escribir tu código**
 1. Lee las instrucciones de la lección
-2. Escribe tu código en el bloque de código de Python:
+2. Escribe tu **nombre completo** (para el certificado)
+3. Escribe tu código en el bloque de código de Python:
    ```python
    # Tu código aquí
    nombre = input("¿Cómo te llamas? ")
@@ -168,6 +169,12 @@ El curso ofrece **dos métodos** para enviar tus soluciones. Elige el que más t
 
 ## 🎮 ¡Empezar ahora!
 
+### 📝 Paso rápido:
+1. Abre un Issue con el template de la lección
+2. Escribe tu **nombre completo** (para el certificado)
+3. Pega tu código Python
+4. ¡El robot valida automáticamente!
+
 ### 🐍 Lección 1: Tu primer programa en Python
 - **Dificultad:** ⭐ Fácil
 - **Tiempo estimado:** 15-30 minutos
@@ -208,6 +215,12 @@ print("Tu nombre tiene " + str(len(nombre)) + " letras")
 ---
 
 ## 🆘 Solución de Problemas
+
+### ❌ "No se recibió certificado"
+**Solución:**
+- Asegúrate de escribir tu **nombre completo** en el Issue/PR
+- El campo debe estar como: `**Nombre completo:** Tu Nombre`
+- Si no lo escribiste, se usará tu username de GitHub
 
 ### ❌ Error: "No se encontró el archivo"
 **Solución:**
@@ -333,7 +346,7 @@ Este proyecto está bajo la licencia MIT - ver el archivo LICENSE para más deta
 
 ¿Tienes preguntas o sugerencias? ¡Contáctanos!
 
-- 🐙 GitHub: [@andres](https://github.com/andres)
+- 🐙 GitHub: [@andres](https://github.com/Andres-Developer-23)
 
 ---
 
