@@ -10,6 +10,10 @@ venv/
 
 # Pytest
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
 # Certificados generados
 certificado_*.png

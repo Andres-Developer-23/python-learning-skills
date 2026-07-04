@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "python-learning-skills"
+version = "1.0.0"
+description = "Curso interactivo de Python con GitHub Actions"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = [
+    "E203",  # whitespace before ':' (black compatible)
+    "W503",  # line break before binary operator (black compatible)
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "env",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
