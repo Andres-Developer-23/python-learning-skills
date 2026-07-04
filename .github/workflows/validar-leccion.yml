@@ -125,6 +125,15 @@ jobs:
             core.setOutput('codigo', codigo);
             console.log(`✅ Código extraído (${codigo.length} caracteres)`);
             
+            // Guardar código como solucion.py
+            const dirPath = `lessons/${carpeta}`;
+            const fs = require('fs');
+            if (!fs.existsSync(dirPath)) {
+              fs.mkdirSync(dirPath, { recursive: true });
+            }
+            fs.writeFileSync(`${dirPath}/solucion.py`, codigo);
+            console.log(`📁 Archivo creado: ${dirPath}/solucion.py`);
+            
             // Extraer nombre completo del estudiante
             const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
             const nombreMatch = body.match(nombreRegex);
@@ -139,24 +148,7 @@ jobs:
             
             core.setOutput('nombre_estudiante', nombreEstudiante);
       
-      # Paso 5: Guardar código como solucion.py
-      - name: Guardar solucion.py
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const carpeta = '${{ steps.extraer.outputs.carpeta }}';
-            const codigo = `${{ steps.extraer.outputs.codigo }}`;
-            
-            const dirPath = `lessons/${carpeta}`;
-            if (!fs.existsSync(dirPath)) {
-              fs.mkdirSync(dirPath, { recursive: true });
-            }
-            
-            fs.writeFileSync(`${dirPath}/solucion.py`, codigo);
-            console.log(`📁 Archivo creado: ${dirPath}/solucion.py`);
-      
-      # Paso 6: Verificar sintaxis
+      # Paso 5: Verificar sintaxis
       - name: Verificar sintaxis
         id: sintaxis
         continue-on-error: true
@@ -165,7 +157,7 @@ jobs:
           python -m py_compile "lessons/${CARPETA}/solucion.py"
           echo "✅ Sintaxis correcta"
       
-      # Paso 7: Ejecutar pruebas
+      # Paso 6: Ejecutar pruebas
       - name: Ejecutar pruebas
         id: pruebas
         if: steps.sintaxis.outcome == 'success'
@@ -175,7 +167,7 @@ jobs:
           echo "🧪 Ejecutando pruebas para Lección ${LECCION}..."
           pytest "tests/test_lesson_${LECCION}.py" -v --tb=short
       
-      # Paso 8: Actualizar label a "en revisión"
+      # Paso 7: Actualizar label a "en revisión"
       - name: Actualizar label
         if: always()
         uses: actions/github-script@v7
@@ -199,7 +191,7 @@ jobs:
               labels: newLabels
             });
       
-      # Paso 9: Comentar resultado
+      # Paso 8: Comentar resultado
       - name: Comentar resultado
         uses: actions/github-script@v7
         with:
@@ -256,7 +248,7 @@ jobs:
               body: mensaje
             });
       
-      # Paso 10: Actualizar label final y cerrar Issue si aprueba
+      # Paso 9: Actualizar label final y cerrar Issue si aprueba
       - name: Actualizar estado final
         if: always()
         uses: actions/github-script@v7
@@ -300,7 +292,7 @@ jobs:
               });
             }
       
-      # Paso 11: Generar certificado si es lección 6 y aprueba
+      # Paso 10: Generar certificado si es lección 6 y aprueba
       - name: Generar certificado
         if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
         run: |
@@ -308,7 +300,7 @@ jobs:
           python3 scripts/generar_certificado.py "${NOMBRE}"
           echo "certificado_generado=true" >> $GITHUB_OUTPUT
       
-      # Paso 12: Subir certificado como artifact
+      # Paso 11: Subir certificado como artifact
       - name: Subir certificado
         if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
         uses: actions/upload-artifact@v4
