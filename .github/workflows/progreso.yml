@@ -1,0 +1,225 @@
+name: "📊 Actualizar Progreso"
+
+# Se ejecuta cuando un Issue se cierra o se mergea un PR
+on:
+  issues:
+    types: [closed]
+  pull_request:
+    types: [closed]
+
+jobs:
+  actualizar-progreso:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+    
+    steps:
+      # 1. Descargar el código
+      - name: 📥 Descargar código
+        uses: actions/checkout@v4
+      
+      # 2. Configurar Python
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      # 3. Detectar lección completada
+      - name: 🔍 Detectar lección completada
+        id: detectar
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let leccion = '';
+            let usuario = '';
+            let numero = '';
+            
+            // Si es un Issue cerrado
+            if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              const labels = issue.labels.map(l => l.name);
+              
+              // Verificar si tiene label "completada"
+              if (!labels.includes('completada')) {
+                console.log('Issue no tiene label "completada", saltando...');
+                return;
+              }
+              
+              usuario = issue.user.login;
+              numero = issue.number.toString();
+              
+              // Detectar lección desde labels
+              const leccionMap = {
+                'leccion-01': '01',
+                'leccion-02': '02',
+                'leccion-03': '03',
+                'leccion-04': '04',
+                'leccion-05': '05',
+                'leccion-06': '06'
+              };
+              
+              for (const [label, num] of Object.entries(leccionMap)) {
+                if (labels.includes(label)) {
+                  leccion = num;
+                  break;
+                }
+              }
+            }
+            
+            // Si es un PR mergeado
+            if (context.eventName === 'pull_request') {
+              const pr = context.payload.pull_request;
+              
+              if (!pr.merged) {
+                console.log('PR no fue mergeado, saltando...');
+                return;
+              }
+              
+              usuario = pr.user.login;
+              numero = pr.number.toString();
+              
+              // Detectar lección desde archivos modificados
+              const files = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+              
+              for (const file of files.data) {
+                const match = file.filename.match(/lessons\/(\d{2})-/);
+                if (match) {
+                  leccion = match[1];
+                  break;
+                }
+              }
+            }
+            
+            if (!leccion || !usuario) {
+              console.log('No se pudo detectar lección o usuario');
+              return;
+            }
+            
+            core.setOutput('leccion', leccion);
+            core.setOutput('usuario', usuario);
+            core.setOutput('numero', numero);
+            core.setOutput('fecha', new Date().toISOString().split('T')[0]);
+            
+            console.log(`📚 Lección ${leccion} completada por ${usuario}`);
+      
+      # 4. Actualizar archivo de progreso
+      - name: 📊 Actualizar progreso
+        if: steps.detectar.outputs.leccion != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const leccion = '${{ steps.detectar.outputs.leccion }}';
+            const usuario = '${{ steps.detectar.outputs.usuario }}';
+            const fecha = '${{ steps.detectar.outputs.fecha }}';
+            
+            // Leer o crear archivo de progreso
+            let progreso = {};
+            const progresoFile = 'PROGRESS.json';
+            
+            if (fs.existsSync(progresoFile)) {
+              progreso = JSON.parse(fs.readFileSync(progresoFile, 'utf8'));
+            }
+            
+            // Inicializar estructura
+            if (!progreso.estudiantes) {
+              progreso.estudiantes = {};
+            }
+            if (!progreso.estudiantes[usuario]) {
+              progreso.estudiantes[usuario] = {
+                lecciones_completadas: [],
+                primera_leccion: fecha,
+                ultima_leccion: fecha
+              };
+            }
+            
+            const estudiante = progreso.estudiantes[usuario];
+            
+            // Agregar lección si no existe
+            if (!estudiante.lecciones_completadas.includes(leccion)) {
+              estudiante.lecciones_completadas.push(leccion);
+              estudiante.lecciones_completadas.sort();
+              estudiante.ultima_leccion = fecha;
+              
+              console.log(`✅ Lección ${leccion} agregada para ${usuario}`);
+              console.log(`📚 Total lecciones: ${estudiante.lecciones_completadas.length}/6`);
+              
+              // Verificar si completó todas
+              if (estudiante.lecciones_completadas.length === 6) {
+                console.log(`🎉 ${usuario} ha completado TODAS las lecciones!`);
+                estudiante.certificado_generado = true;
+                estudiante.fecha_completado = fecha;
+              }
+            }
+            
+            // Guardar archivo
+            fs.writeFileSync(progresoFile, JSON.stringify(progreso, null, 2));
+            console.log('📊 Progreso actualizado');
+      
+      # 5. Commit del progreso
+      - name: 💾 Guardar cambios
+        if: steps.detectar.outputs.leccion != ''
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add PROGRESS.json
+          git diff --staged --quiet || git commit -m "chore: actualizar progreso - Lección ${{ steps.detectar.outputs.leccion }} completada por ${{ steps.detectar.outputs.usuario }}"
+          git push
+      
+      # 6. Notificar si completó todas las lecciones
+      - name: 🎓 Notificar certificado
+        if: steps.detectar.outputs.leccion == '06'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const usuario = '${{ steps.detectar.outputs.usuario }}';
+            const numero = '${{ steps.detectar.outputs.numero }}';
+            
+            // Verificar si el estudiante completó todas las lecciones
+            const fs = require('fs');
+            if (fs.existsSync('PROGRESS.json')) {
+              const progreso = JSON.parse(fs.readFileSync('PROGRESS.json', 'utf8'));
+              const estudiante = progreso.estudiantes?.[usuario];
+              
+              if (estudiante?.lecciones_completadas?.length === 6) {
+                // Crear Issue de felicitación
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🎓 ¡Felicitaciones ${usuario}! Has completado el curso`,
+                  body: `## 🎉 ¡Felicidades ${usuario}!
+                  
+                  Has completado **todas las lecciones** del curso de Python con GitHub Actions.
+                  
+                  ### 📊 Tu progreso:
+                  - ✅ Lección 1: Introducción a Python
+                  - ✅ Lección 2: Variables y Tipos de Datos
+                  - ✅ Lección 3: Estructuras de Control
+                  - ✅ Lección 4: Bucles y Listas
+                  - ✅ Lección 5: Funciones
+                  - ✅ Lección 6: Proyecto Final
+                  
+                  ### 🎓 Tu certificado:
+                  Tu certificado de completación está disponible como artifact del workflow de la Lección 6.
+                  
+                  ### 🏆 Logros desbloqueados:
+                  - 🐍 Primer Programa
+                  - 📊 Maestro de Variables
+                  - 🔀 Control de Flujo
+                  - 🔄 Bucle Pro
+                  - ⚡ Función Cumplida
+                  - 🎯 **Python Master** 👑
+                  
+                  ---
+                  *¡Gracias por completar el curso! Sigue practicando y aprendiendo.*`,
+                  labels: ['certificado', 'completado']
+                });
+                
+                console.log(`🎓 Issue de felicitación creado para ${usuario}`);
+              }
+            }
