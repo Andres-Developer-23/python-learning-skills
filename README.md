@@ -4,9 +4,9 @@
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automated-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Progress](https://img.shields.io/badge/Progress-0%25-red.svg)
-![Issues](https://img.shields.io/github/issues/andres/python-learning-skills)
-![Stars](https://img.shields.io/github/stars/andres/python-learning-skills)
-![Forks](https://img.shields.io/github/forks/andres/python-learning-skills)
+![Issues](https://img.shields.io/github/issues/Andres-Developer-23/python-learning-skills)
+![Stars](https://img.shields.io/github/stars/Andres-Developer-23/python-learning-skills)
+![Forks](https://img.shields.io/github/forks/Andres-Developer-23/python-learning-skills)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
 > 📚 **Curso interactivo de Python** - Aprende programación resolviendo ejercicios con feedback automático
