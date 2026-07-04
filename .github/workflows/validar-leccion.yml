@@ -3,38 +3,43 @@ name: "Validar Lección de Python"
 
 # Cuándo se activa
 on:
-  # Cuando alguien crea o modifica un Pull Request
-  pull_request:
-    paths:
-      - 'lessons/**/solucion.py'
+  # Cuando alguien crea un Issue
+  issues:
+    types: [opened]
   # Cuando alguien comenta en un Issue
   issue_comment:
     types: [created]
-  # Cuando se crea un nuevo Issue
-  issues:
-    types: [opened]
 
-# Definir qué permisos tiene la acción
+# Permisos necesarios
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
-# El trabajo que va a hacer
+# Mapeo de labels a carpetas de lecciones
+env:
+  LECCION_MAP: |
+    leccion-01:01-intro
+    leccion-02:02-variables
+    leccion-03:03-conditionals
+    leccion-04:04-loops
+    leccion-05:05-functions
+    leccion-06:06-final-project
+
 jobs:
-  revisar-codigo:
-    runs-on: ubuntu-latest  # Usa una máquina de Linux
+  validar-codigo:
+    runs-on: ubuntu-latest
     
     steps:
       # Paso 1: Descargar el código
       - name: Descargar código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
-      # Paso 2: Instalar Python
-      - name: Instalar Python
-        uses: actions/setup-python@v4
+      # Paso 2: Configurar Python
+      - name: Configurar Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       
       # Paso 3: Instalar herramientas
       - name: Instalar herramientas
@@ -42,45 +47,139 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
       
-      # Paso 4: Detectar qué lección se está validando
-      - name: Detectar lección
-        id: detectar
-        run: |
-          LECCION=""
-          if [ -f "lessons/01-intro/solucion.py" ]; then
-            LECCION="01"
-          elif [ -f "lessons/02-variables/solucion.py" ]; then
-            LECCION="02"
-          elif [ -f "lessons/03-conditionals/solucion.py" ]; then
-            LECCION="03"
-          elif [ -f "lessons/04-loops/solucion.py" ]; then
-            LECCION="04"
-          elif [ -f "lessons/05-functions/solucion.py" ]; then
-            LECCION="05"
-          elif [ -f "lessons/06-final-project/solucion.py" ]; then
-            LECCION="06"
-          fi
-          echo "leccion=$LECCION" >> $GITHUB_OUTPUT
-          echo "📚 Lección detectada: $LECCION"
-      
-      # Paso 5: Ejecutar las pruebas de la lección detectada
-      - name: Ejecutar pruebas
-        id: pruebas
-        if: steps.detectar.outputs.leccion != ''
-        continue-on-error: true
-        run: |
-          LECCION="${{ steps.detectar.outputs.leccion }}"
-          echo "🧪 Ejecutando pruebas para Lección $LECCION..."
-          pytest "tests/test_lesson_${LECCION}.py" -v
-      
-      # Paso 6: Comentar el resultado
-      - name: Comentar resultado
-        uses: actions/github-script@v6
+      # Paso 4: Extraer código del Issue y detectar lección
+      - name: Extraer código y detectar lección
+        id: extraer
+        uses: actions/github-script@v7
         with:
           script: |
-            const leccion = '${{ steps.detectar.outputs.leccion }}';
-            const paso = '${{ steps.pruebas.outcome }}';
-            let mensaje = '';
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const labels = issue.labels.map(l => l.name);
+            
+            // Detectar lección desde labels
+            let leccionNum = '';
+            let carpeta = '';
+            
+            const leccionMap = {
+              'leccion-01': { num: '01', carpeta: '01-intro' },
+              'leccion-02': { num: '02', carpeta: '02-variables' },
+              'leccion-03': { num: '03', carpeta: '03-conditionals' },
+              'leccion-04': { num: '04', carpeta: '04-loops' },
+              'leccion-05': { num: '05', carpeta: '05-functions' },
+              'leccion-06': { num: '06', carpeta: '06-final-project' }
+            };
+            
+            for (const [label, info] of Object.entries(leccionMap)) {
+              if (labels.includes(label)) {
+                leccionNum = info.num;
+                carpeta = info.carpeta;
+                break;
+              }
+            }
+            
+            // Si no hay label, intentar detectar del título
+            if (!leccionNum) {
+              const titulo = issue.title || '';
+              for (const [label, info] of Object.entries(leccionMap)) {
+                if (titulo.toLowerCase().includes(info.num) || 
+                    titulo.toLowerCase().includes(info.carpeta.replace(/-/g, ' '))) {
+                  leccionNum = info.num;
+                  carpeta = info.carpeta;
+                  break;
+                }
+              }
+            }
+            
+            if (!leccionNum) {
+              core.setFailed('No se pudo detectar la lección. Asegúrate de usar el template correcto.');
+              return;
+            }
+            
+            core.setOutput('leccion', leccionNum);
+            core.setOutput('carpeta', carpeta);
+            console.log(`📚 Lección detectada: ${leccionNum} (${carpeta})`);
+            
+            // Extraer código Python del body
+            const codeRegex = /```python\s*\n([\s\S]*?)```/;
+            const match = body.match(codeRegex);
+            
+            if (!match) {
+              core.setFailed('No se encontró código Python en el Issue. Usa el formato ```python ... ```');
+              return;
+            }
+            
+            const codigo = match[1].trim();
+            if (!codigo) {
+              core.setFailed('El bloque de código está vacío.');
+              return;
+            }
+            
+            core.setOutput('codigo', codigo);
+            console.log(`✅ Código extraído (${codigo.length} caracteres)`);
+      
+      # Paso 5: Guardar código como solucion.py
+      - name: Guardar solucion.py
+        run: |
+          CARPETA="${{ steps.extraer.outputs.carpeta }}"
+          mkdir -p "lessons/${CARPETA}"
+          cat > "lessons/${CARPETA}/solucion.py" << 'CODIGO_EOF'
+          ${{ steps.extraer.outputs.codigo }}
+          CODIGO_EOF
+          echo "📁 Archivo creado: lessons/${CARPETA}/solucion.py"
+      
+      # Paso 6: Verificar sintaxis
+      - name: Verificar sintaxis
+        id: sintaxis
+        continue-on-error: true
+        run: |
+          CARPETA="${{ steps.extraer.outputs.carpeta }}"
+          python -m py_compile "lessons/${CARPETA}/solucion.py"
+          echo "✅ Sintaxis correcta"
+      
+      # Paso 7: Ejecutar pruebas
+      - name: Ejecutar pruebas
+        id: pruebas
+        if: steps.sintaxis.outcome == 'success'
+        continue-on-error: true
+        run: |
+          LECCION="${{ steps.extraer.outputs.leccion }}"
+          echo "🧪 Ejecutando pruebas para Lección ${LECCION}..."
+          pytest "tests/test_lesson_${LECCION}.py" -v --tb=short
+      
+      # Paso 8: Actualizar label a "en revisión"
+      - name: Actualizar label
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+            
+            // Remover "pendiente" si existe
+            const newLabels = labels.filter(l => l !== 'pendiente');
+            
+            // Agregar "en-revision" si no está
+            if (!newLabels.includes('en-revision')) {
+              newLabels.push('en-revision');
+            }
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: newLabels
+            });
+      
+      # Paso 9: Comentar resultado
+      - name: Comentar resultado
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const leccion = '${{ steps.extraer.outputs.leccion }}';
+            const sintaxisOk = '${{ steps.sintaxis.outcome }}' === 'success';
+            const pruebasOk = '${{ steps.pruebas.outcome }}' === 'success';
+            const todoOk = sintaxisOk && pruebasOk;
             
             const nombresLecciones = {
               '01': 'Introducción a Python',
@@ -93,43 +192,33 @@ jobs:
             
             const nombreLeccion = nombresLecciones[leccion] || 'Desconocida';
             
-            if (!leccion) {
-              mensaje = `⚠️ No se detectó ninguna lección válida.
-              
-              ### 📋 Asegúrate de:
-              - Crear el archivo \`solucion.py\` en la carpeta correcta
-              - Seguir la estructura: \`lessons/XX-nombre/solucion.py\`
-              
-              ### 📁 Lecciones disponibles:
-              - lessons/01-intro/
-              - lessons/02-variables/
-              - lessons/03-conditionals/
-              - lessons/04-loops/
-              - lessons/05-functions/
-              - lessons/06-final-project/`;
-            } else if (paso === 'success') {
-              mensaje = `✅ ¡Excelente! Tu código de la Lección ${leccion} funciona perfectamente.
-              
-              ### 📊 Resultados:
-              - ✅ Todas las pruebas pasaron
-              - ✅ Tu código es correcto
-              
-              ### 🎉 ¡Sigue así!
-              Ahora puedes pasar a la siguiente lección.`;
+            const estado = (ok) => ok ? '✅' : '❌';
+            
+            let mensaje = `## ${todoOk ? '🎉' : '🔍'} Resultado de Validación - Lección ${leccion}
+            
+            **${nombreLeccion}**
+            
+            ### Verificaciones:
+            | Verificación | Estado |
+            |--------------|--------|
+            | ${estado(sintaxisOk)} Sintaxis Python | ${sintaxisOk ? 'Correcta' : 'Con errores'} |
+            | ${estado(pruebasOk)} Pruebas automáticas | ${pruebasOk ? 'Todas pasaron' : 'Fallaron'} |
+            `;
+            
+            if (todoOk) {
+              mensaje += `
+            ### 🏆 ¡Felicidades!
+            Tu código ha pasado todas las verificaciones. ¡Excelente trabajo!
+            
+            **Siguiente paso:** Puedes continuar con la siguiente lección.`;
             } else {
-              mensaje = `❌ Tu código de la Lección ${leccion} necesita correcciones.
-              
-              ### 🔍 Problemas encontrados:
-              - Revisa los requisitos de la lección
-              - Verifica que no hay errores de sintaxis
-              
-              ### 💡 Para probar localmente:
-              \`\`\`bash
-              python lessons/$(echo ${{ steps.detectar.outputs.leccion }} | sed 's/^0*//')-*/solucion.py
-              \`\`\`
-              
-              ### 🆘 ¿Necesitas ayuda?
-              Pide ayuda en los comentarios.`;
+              mensaje += `
+            ### 💡 Sugerencias:
+            - Revisa los requisitos de la lección
+            - Verifica la sintaxis de tu código
+            - Asegúrate de que tu programa funcione correctamente
+            
+            **¿Necesitas ayuda?** Pide ayuda en los comentarios.`;
             }
             
             github.rest.issues.createComment({
@@ -138,3 +227,63 @@ jobs:
               repo: context.repo.repo,
               body: mensaje
             });
+      
+      # Paso 10: Actualizar label final y cerrar Issue si aprueba
+      - name: Actualizar estado final
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const sintaxisOk = '${{ steps.sintaxis.outcome }}' === 'success';
+            const pruebasOk = '${{ steps.pruebas.outcome }}' === 'success';
+            const todoOk = sintaxisOk && pruebasOk;
+            const leccion = '${{ steps.extraer.outputs.leccion }}';
+            
+            const labels = issue.labels.map(l => l.name);
+            let newLabels = labels.filter(l => l !== 'pendiente' && l !== 'en-revision');
+            
+            if (todoOk) {
+              newLabels.push('completada');
+              
+              // Cerrar Issue si aprueba
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                labels: newLabels
+              });
+              
+              // Generar certificado si es lección 6
+              if (leccion === '06') {
+                const username = context.payload.issue.user.login;
+                core.setOutput('generar_certificado', 'true');
+                core.setOutput('username', username);
+              }
+            } else {
+              newLabels.push('rechazada');
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: newLabels
+              });
+            }
+      
+      # Paso 11: Generar certificado si es lección 6 y aprueba
+      - name: Generar certificado
+        if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
+        run: |
+          USERNAME="${{ github.event.issue.user.login }}"
+          python3 scripts/generar_certificado.py "${USERNAME}"
+          echo "certificado_generado=true" >> $GITHUB_OUTPUT
+      
+      # Paso 12: Subir certificado como artifact
+      - name: Subir certificado
+        if: steps.extraer.outputs.leccion == '06' && steps.pruebas.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: certificado-python-master
+          path: certificado_*.png
