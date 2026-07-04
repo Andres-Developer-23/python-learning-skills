@@ -1,5 +1,9 @@
 name: "📊 Actualizar Progreso"
 
+concurrency:
+  group: progreso-${{ github.ref }}
+  cancel-in-progress: true
+
 # Se ejecuta cuando un Issue se cierra o se mergea un PR
 on:
   issues:
@@ -180,8 +184,18 @@ jobs:
             }
             
             // Guardar archivo
+            progreso.ultima_actualizacion = fecha;
+            const numEstudiantes = Object.keys(progreso.estudiantes).length;
+            let totalLecciones = 0;
+            for (const est of Object.values(progreso.estudiantes)) {
+              totalLecciones += est.lecciones_completadas?.length || 0;
+            }
+            progreso.total_estudiantes = numEstudiantes;
+            progreso.total_lecciones_completadas = totalLecciones;
             fs.writeFileSync(progresoFile, JSON.stringify(progreso, null, 2));
             console.log('📊 Progreso actualizado');
+            console.log(`👥 Total estudiantes: ${numEstudiantes}`);
+            console.log(`📚 Total lecciones completadas: ${totalLecciones}`);
       
       # 5. Commit del progreso
       - name: 💾 Guardar cambios
@@ -190,8 +204,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add PROGRESS.json
-          git diff --staged --quiet || git commit -m "chore: actualizar progreso - Lección ${{ steps.detectar.outputs.leccion }} completada por ${{ steps.detectar.outputs.usuario }}"
-          git push
+          git diff --staged --quiet || (git commit -m "chore: actualizar progreso - Lección ${{ steps.detectar.outputs.leccion }} completada por ${{ steps.detectar.outputs.usuario }}" && git pull --rebase && git push)
       
       # 6. Notificar si completó todas las lecciones
       - name: 🎓 Notificar certificado
