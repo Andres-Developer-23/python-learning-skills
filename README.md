@@ -259,6 +259,29 @@ flake8 lessons/01-intro/solucion.py
 
 ---
 
+## 🎓 Certificado
+
+Al completar todas las lecciones, puedes generar tu **certificado de completación** como imagen PNG.
+
+### Cómo obtener tu certificado:
+
+```bash
+# Ejecuta el script con tu nombre
+python3 scripts/generar_certificado.py "Tu Nombre"
+```
+
+**Ejemplo:**
+```bash
+python3 scripts/generar_certificado.py "María García"
+```
+
+Se generará un archivo `certificado_tu_nombre.png` que puedes:
+- 📱 Compartir en redes sociales
+- 📄 imprimir
+- 💾 Guardar en tu portafolio
+
+---
+
 ## 🤝 Contribuir
 
 ¡Tu ayuda es valiosa! Hay muchas formas de contribuir:

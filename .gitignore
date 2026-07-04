@@ -11,6 +11,9 @@ venv/
 # Pytest
 .pytest_cache/
 
+# Certificados generados
+certificado_*.png
+
 # IDE
 .vscode/
 .idea/
