@@ -18,16 +18,48 @@ except ImportError:
 def buscar_fuentes():
     """Busca fuentes disponibles en el sistema"""
     rutas_fuentes = [
+        # Linux - Debian/Ubuntu
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-Bold.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-Regular.ttf",
+        # Linux - Fedora/CentOS
         "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/liberation-sans/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf",
+        # macOS
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+        # Windows
         "C:/Windows/Fonts/arial.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
+        "C:/Windows/Fonts/calibrib.ttf",
+        "C:/Windows/Fonts/verdana.ttf",
+        "C:/Windows/Fonts/verdanab.ttf",
     ]
     for ruta in rutas_fuentes:
         if Path(ruta).exists():
             return ruta
+
+    # Fallback: usar fontconfig en Linux
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["fc-match", "--format=%{file}", "sans-serif:bold"],
+            capture_output=True, text=True, timeout=2
+        )
+        ruta = result.stdout.strip()
+        if ruta and Path(ruta).exists():
+            return ruta
+    except Exception:
+        pass
+
     return None
 
 
@@ -148,7 +180,7 @@ def generar_certificado(nombre_estudiante, lecciones_completadas=6, fecha=None):
 
 def main():
     if len(sys.argv) < 2:
-        print(" uso: python generar_certificado.py <Nombre del Estudiante>")
+        print("Uso: python generar_certificado.py <Nombre del Estudiante>")
         print(" ejemplo: python generar_certificado.py María García")
         sys.exit(1)
 
