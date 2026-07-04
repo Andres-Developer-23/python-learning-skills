@@ -1,0 +1,94 @@
+# Nombre de la acción
+name: "Validar Lección de Python"
+
+# Cuándo se activa
+on:
+  # Cuando alguien crea o modifica un Pull Request
+  pull_request:
+    paths:
+      - 'lessons/**/solucion.py'
+  # Cuando alguien comenta en un Issue
+  issue_comment:
+    types: [created]
+  # Cuando se crea un nuevo Issue
+  issues:
+    types: [opened]
+
+# Definir qué permisos tiene la acción
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+# El trabajo que va a hacer
+jobs:
+  revisar-codigo:
+    runs-on: ubuntu-latest  # Usa una máquina de Linux
+    
+    steps:
+      # Paso 1: Descargar el código
+      - name: Descargar código
+        uses: actions/checkout@v3
+      
+      # Paso 2: Instalar Python
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      # Paso 3: Instalar herramientas
+      - name: Instalar herramientas
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      
+      # Paso 4: Ejecutar las pruebas
+      - name: Ejecutar pruebas
+        id: pruebas
+        continue-on-error: true  # No se detiene si falla
+        run: |
+          pytest tests/test_lesson_01.py -v
+      
+      # Paso 5: Comentar el resultado
+      - name: Comentar resultado
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const paso = '${{ steps.pruebas.outcome }}';
+            let mensaje = '';
+            
+            if (paso === 'success') {
+              mensaje = `✅ ¡Excelente! Tu código funciona perfectamente.
+              
+              ### 📊 Resultados:
+              - ✅ Todas las pruebas pasaron
+              - ✅ Tu código es correcto
+              
+              ### 🎉 ¡Sigue así!
+              Ahora puedes pasar a la Lección 2.
+              
+              ### 💡 Tip:
+              Abre un nuevo Issue con el título "Lección 2" para continuar.`;
+            } else {
+              mensaje = `❌ Tu código necesita correcciones.
+              
+              ### 🔍 Problemas encontrados:
+              - Revisa los requisitos de la lección
+              - Asegúrate de usar input() y print()
+              - Verifica que no hay errores de sintaxis
+              
+              ### 💡 Para probar localmente:
+              \`\`\`bash
+              python lessons/01-intro/solucion.py
+              \`\`\`
+              
+              ### 🆘 ¿Necesitas ayuda?
+              Pide ayuda en los comentarios.`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: mensaje
+            });
