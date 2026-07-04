@@ -1,40 +1,35 @@
 import subprocess
 import sys
+from helpers import has_if, has_for, has_while, has_dict_or_set, count_function_defs
 
 def test_archivo_existe():
-    """Verifica que el archivo existe"""
     try:
         with open("lessons/06-final-project/solucion.py", "r") as f:
             assert f.read() != "", "El archivo está vacío"
     except FileNotFoundError:
         assert False, "No encontré solucion.py en lessons/06-final-project/"
 
-def test_tiene_funciones():
-    """Verifica que define al menos 2 funciones"""
+def _leer_contenido():
     with open("lessons/06-final-project/solucion.py", "r") as f:
-        contenido = f.read()
-        assert contenido.count("def ") >= 2, "Debes definir al menos 2 funciones"
+        return f.read()
+
+def test_tiene_funciones():
+    contenido = _leer_contenido()
+    assert count_function_defs(contenido) >= 2, "Debes definir al menos 2 funciones"
 
 def test_tiene_condicionales():
-    """Verifica que usa condicionales"""
-    with open("lessons/06-final-project/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "if " in contenido, "No usaste condicionales"
+    contenido = _leer_contenido()
+    assert has_if(contenido), "No usaste condicionales"
 
 def test_tiene_bucles():
-    """Verifica que usa bucles"""
-    with open("lessons/06-final-project/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "for " in contenido or "while " in contenido, "No usaste bucles"
+    contenido = _leer_contenido()
+    assert has_for(contenido) or has_while(contenido), "No usaste bucles"
 
 def test_usa_diccionarios():
-    """Verifica que usa diccionarios o listas de datos"""
-    with open("lessons/06-final-project/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "{" in contenido and "}" in contenido, "Debes usar diccionarios para guardar datos"
+    contenido = _leer_contenido()
+    assert has_dict_or_set(contenido), "Debes usar diccionarios para guardar datos"
 
 def test_ejecucion_correcta():
-    """Ejecuta el programa y verifica que funciona"""
     resultado = subprocess.run(
         [sys.executable, "lessons/06-final-project/solucion.py"],
         input="1\nAna\n95\n",

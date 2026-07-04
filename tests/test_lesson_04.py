@@ -1,34 +1,31 @@
 import subprocess
 import sys
+from helpers import has_function_call, has_for, has_while, has_method_call
 
 def test_archivo_existe():
-    """Verifica que el archivo existe"""
     try:
         with open("lessons/04-loops/solucion.py", "r") as f:
             assert f.read() != "", "El archivo está vacío"
     except FileNotFoundError:
         assert False, "No encontré solucion.py en lessons/04-loops/"
 
-def test_tiene_bucle():
-    """Verifica que usa un bucle"""
+def _leer_contenido():
     with open("lessons/04-loops/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "for " in contenido or "while " in contenido, "No usaste for o while"
+        return f.read()
+
+def test_tiene_bucle():
+    contenido = _leer_contenido()
+    assert has_for(contenido) or has_while(contenido), "No usaste for o while"
 
 def test_usa_lista():
-    """Verifica que usa una lista"""
-    with open("lessons/04-loops/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "append(" in contenido or "[]= " in contenido or "[]," in contenido, "No usaste listas correctamente"
+    contenido = _leer_contenido()
+    assert has_method_call(contenido, "append"), "No usaste listas correctamente"
 
 def test_usar_input():
-    """Verifica que usa input()"""
-    with open("lessons/04-loops/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "input(" in contenido, "No usaste input() para obtener datos"
+    contenido = _leer_contenido()
+    assert has_function_call(contenido, "input"), "No usaste input() para obtener datos"
 
 def test_ejecucion_correcta():
-    """Ejecuta el programa y verifica que funciona"""
     resultado = subprocess.run(
         [sys.executable, "lessons/04-loops/solucion.py"],
         input="Leer\nCorrer\nCocinar\n",

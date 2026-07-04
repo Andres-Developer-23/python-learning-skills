@@ -1,34 +1,43 @@
 import subprocess
 import sys
+from helpers import has_return, count_function_defs
 
 def test_archivo_existe():
-    """Verifica que el archivo existe"""
     try:
         with open("lessons/05-functions/solucion.py", "r") as f:
             assert f.read() != "", "El archivo está vacío"
     except FileNotFoundError:
         assert False, "No encontré solucion.py en lessons/05-functions/"
 
-def test_tiene_funciones():
-    """Verifica que define funciones"""
+def _leer_contenido():
     with open("lessons/05-functions/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "def " in contenido, "No definiste ninguna función con def"
+        return f.read()
+
+def test_tiene_funciones():
+    contenido = _leer_contenido()
+    assert count_function_defs(contenido) >= 1, "No definiste ninguna función con def"
 
 def test_tiene_parametros():
-    """Verifica que usa parámetros"""
-    with open("lessons/05-functions/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "def " in contenido and "(" in contenido, "Las funciones deben tener parámetros"
+    contenido = _leer_contenido()
+    tree = None
+    try:
+        import ast
+        tree = ast.parse(contenido)
+    except SyntaxError:
+        pass
+    assert tree is not None, "Error de sintaxis en tu código"
+    tiene_params = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.args.args:
+            tiene_params = True
+            break
+    assert tiene_params, "Las funciones deben tener parámetros"
 
 def test_tiene_return():
-    """Verifica que usa return"""
-    with open("lessons/05-functions/solucion.py", "r") as f:
-        contenido = f.read()
-        assert "return " in contenido, "No usaste return en tus funciones"
+    contenido = _leer_contenido()
+    assert has_return(contenido), "No usaste return en tus funciones"
 
 def test_ejecucion_correcta():
-    """Ejecuta el programa y verifica que funciona"""
     resultado = subprocess.run(
         [sys.executable, "lessons/05-functions/solucion.py"],
         capture_output=True,
