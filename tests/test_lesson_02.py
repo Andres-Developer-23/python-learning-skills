@@ -17,6 +17,18 @@ def test_tiene_variables():
         assert "edad" in contenido, "No definiste la variable 'edad'"
         assert "altura" in contenido, "No definiste la variable 'altura'"
 
+def test_tiene_lista():
+    """Verifica que usa una lista para hobbies"""
+    with open("lessons/02-variables/solucion.py", "r") as f:
+        contenido = f.read()
+        assert "[" in contenido and "]" in contenido, "No definiste una lista para hobbies"
+
+def test_usa_fstrings():
+    """Verifica que usa f-strings para mostrar mensajes"""
+    with open("lessons/02-variables/solucion.py", "r") as f:
+        contenido = f.read()
+        assert 'f"' in contenido or "f'" in contenido, "Debes usar f-strings para mostrar mensajes"
+
 def test_ejecuta_sin_errores():
     """Verifica que el programa funciona"""
     resultado = subprocess.run(

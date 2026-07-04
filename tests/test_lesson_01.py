@@ -21,6 +21,12 @@ def test_usar_print():
         contenido = f.read()
         assert "print(" in contenido, "No usaste print() para mostrar mensajes"
 
+def test_usar_len():
+    """Verifica que usa len()"""
+    with open("lessons/01-intro/solucion.py", "r") as f:
+        contenido = f.read()
+        assert "len(" in contenido, "No usaste len() para contar letras"
+
 def test_ejecucion_correcta():
     """Ejecuta el programa y verifica que funciona"""
     resultado = subprocess.run(
