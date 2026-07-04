@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤝 Guía de Contribución
+    url: https://github.com/Andres-Developer-23/python-learning-skills/blob/main/CONTRIBUTING.md
+    about: Lee la guía antes de abrir un Issue
+  - name: 💡 Sugerencias y Feedback
+    url: https://github.com/Andres-Developer-23/python-learning-skills/issues/new
+    about: Para sugerencias o preguntas generales

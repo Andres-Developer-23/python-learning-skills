@@ -17,3 +17,11 @@ Pega tu código aquí:
 ```python
 # Escribe tu código aquí
 ```
+
+> 💡 **Pista**: Usa `input()` para preguntar el nombre, `print()` para mostrar mensajes y `len()` para contar letras.
+>
+> ```
+> # Ejemplo:
+> nombre = input("¿Cómo te llamas? ")
+> print("¡Hola", nombre, "! Bienvenida a Python")
+```
