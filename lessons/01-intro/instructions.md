@@ -10,3 +10,15 @@ Crea un programa que:
 3. Muestre cuántas letras tiene el nombre
 
 ## 💡 Ejemplo
+
+¿Cómo te llamas? Ana
+¡Hola Ana! Bienvenida a Python
+Tu nombre tiene 3 letras
+
+## 🔧 Requisitos
+- Usa `input()` para preguntar el nombre
+- Usa `print()` para mostrar mensajes
+- Usa `len()` para contar letras
+
+## 🚀 ¡Manos a la obra!
+Escribe tu código en un archivo llamado `solucion.py`
