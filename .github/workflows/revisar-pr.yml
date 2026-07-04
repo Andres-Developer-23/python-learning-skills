@@ -1,0 +1,171 @@
+name: "Revisar Python en PR"
+
+# Se activa cuando:
+on:
+  pull_request:
+    # Solo cuando se tocan archivos de las lecciones
+    paths:
+      - 'lessons/**/solucion.py'
+  pull_request_review:
+    # También cuando se pide revisión
+    types: [submitted]
+
+jobs:
+  revisar-codigo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      # 1. Descargar el código de la rama del PR
+      - name: Descargar código
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      
+      # 2. Instalar Python
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      # 3. Instalar herramientas de prueba
+      - name: Instalar herramientas
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest flake8
+      
+      # 4. Ejecutar pruebas
+      - name: Ejecutar pruebas
+        id: pruebas
+        continue-on-error: true
+        run: |
+          # Buscar qué lección cambió
+          echo "📂 Archivos modificados:"
+          git diff --name-only origin/main...HEAD
+          
+          # Ejecutar pruebas para todas las lecciones
+          pytest tests/ -v --tb=short
+      
+      # 5. Verificar estilo de código
+      - name: Verificar estilo
+        id: estilo
+        continue-on-error: true
+        run: |
+          flake8 lessons/ --max-line-length=88 --count --statistics
+      
+      # 6. Comentar en el PR
+      - name: Comentar resultado
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pruebas = '${{ steps.pruebas.outcome }}';
+            const estilo = '${{ steps.estilo.outcome }}';
+            const prNumber = context.payload.pull_request.number;
+            
+            let mensaje = `## 📊 Revisión de código
+            `;
+            
+            // Resultado de pruebas
+            if (pruebas === 'success') {
+              mensaje += `### ✅ Pruebas: PASARON
+              - Todas las pruebas se ejecutaron correctamente
+              - Tu código funciona como esperamos
+              `;
+            } else {
+              mensaje += `### ❌ Pruebas: FALLARON
+              - Revisa los errores en la pestaña "Checks"
+              - Asegúrate de que tu código cumple los requisitos
+              `;
+            }
+            
+            // Resultado de estilo
+            if (estilo === 'success') {
+              mensaje += `### ✅ Estilo de código: CORRECTO
+              - Sigue las buenas prácticas de Python
+              - Código limpio y legible
+              `;
+            } else {
+              mensaje += `### ⚠️ Estilo de código: MEJORABLE
+              - Revisa el formato de tu código
+              - Usa nombres descriptivos
+              `;
+            }
+            
+            // Resumen
+            if (pruebas === 'success' && estilo === 'success') {
+              mensaje += `
+              ## 🎉 ¡Excelente trabajo!
+              
+              ### 📝 Tu código está perfecto. Puedes fusionar este PR.
+              
+              ### 🏆 Siguiente paso:
+              - Abre un nuevo PR para la siguiente lección
+              - O completa el desafío extra
+              
+              ### 📚 Recursos:
+              - [Documentación de Python](https://docs.python.org/3/)
+              - [Guía de estilo PEP 8](https://pep8.org/)
+              `;
+            } else {
+              mensaje += `
+              ## 🔧 Sugerencias para mejorar
+              
+              ### 📋 Lista de verificación:
+              - [ ] Revisa la sintaxis de tu código
+              - [ ] Verifica que usas las funciones correctas
+              - [ ] Prueba tu código localmente
+              - [ ] Corrige los errores mostrados
+              
+              ### 💡 Comandos útiles:
+              \`\`\`bash
+              # Probar localmente
+              python lessons/01-intro/solucion.py
+              
+              # Ejecutar pruebas
+              pytest tests/test_lesson_01.py -v
+              
+              # Verificar estilo
+              flake8 lessons/01-intro/solucion.py
+              \`\`\`
+              `;
+            }
+            
+            // Crear comentario en el PR
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: mensaje
+            });
+      
+      # 7. Aprobar o solicitar cambios automáticamente
+      - name: Decisión automática
+        if: github.event.pull_request.draft == false
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pruebas = '${{ steps.pruebas.outcome }}';
+            const prNumber = context.payload.pull_request.number;
+            
+            // Si las pruebas pasan, aprobar el PR
+            if (pruebas === 'success') {
+              github.rest.pulls.createReview({
+                pull_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '✅ ¡Aprobado automáticamente! Todas las pruebas pasaron.',
+                event: 'APPROVE'
+              });
+            } else {
+              // Si fallan, solicitar cambios
+              github.rest.pulls.createReview({
+                pull_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '❌ Solicito cambios. Revisa los errores.',
+                event: 'REQUEST_CHANGES'
+              });
+            }
