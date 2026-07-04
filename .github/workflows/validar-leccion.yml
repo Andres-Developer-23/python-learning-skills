@@ -1,6 +1,10 @@
 # Nombre de la acción
 name: "Validar Lección de Python"
 
+concurrency:
+  group: validar-leccion-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 # Cuándo se activa
 on:
   # Cuando alguien crea un Issue con label de lección
@@ -157,15 +161,20 @@ jobs:
             
             core.setOutput('codigo', codigo);
             
-            // Guardar código como solucion.py
+            // Guardar código con nombre único por issue
             const dirPath = `lessons/${carpeta}`;
+            const issueNumber = issue.number;
+            const uniqueFilename = `solucion-issue-${issueNumber}.py`;
             const fs = require('fs');
             if (!fs.existsSync(dirPath)) {
               fs.mkdirSync(dirPath, { recursive: true });
             }
-            fs.writeFileSync(`${dirPath}/solucion.py`, codigo);
-            const stats = fs.statSync(`${dirPath}/solucion.py`);
-            console.log(`📁 Archivo escrito: ${dirPath}/solucion.py (${stats.size} bytes)`);
+            fs.writeFileSync(`${dirPath}/${uniqueFilename}`, codigo);
+            const stats = fs.statSync(`${dirPath}/${uniqueFilename}`);
+            console.log(`📁 Archivo escrito: ${dirPath}/${uniqueFilename} (${stats.size} bytes)`);
+            
+            core.setOutput('issue_number', String(issueNumber));
+            core.setOutput('unique_filename', uniqueFilename);
             
             // Extraer nombre completo del estudiante
             const nombreRegex = /\*\*Nombre completo:\*\*\s*(.+)/;
@@ -187,6 +196,8 @@ jobs:
         continue-on-error: true
         run: |
           CARPETA="${{ steps.extraer.outputs.carpeta }}"
+          UNICO="${{ steps.extraer.outputs.unique_filename }}"
+          cp "lessons/${CARPETA}/${UNICO}" "lessons/${CARPETA}/solucion.py"
           python -m py_compile "lessons/${CARPETA}/solucion.py"
           echo "✅ Sintaxis correcta"
       
@@ -196,6 +207,9 @@ jobs:
         if: steps.sintaxis.outcome == 'success'
         continue-on-error: true
         run: |
+          CARPETA="${{ steps.extraer.outputs.carpeta }}"
+          UNICO="${{ steps.extraer.outputs.unique_filename }}"
+          cp "lessons/${CARPETA}/${UNICO}" "lessons/${CARPETA}/solucion.py"
           LECCION="${{ steps.extraer.outputs.leccion }}"
           echo "🧪 Ejecutando pruebas para Lección ${LECCION}..."
           pytest "tests/test_lesson_${LECCION}.py" -v --tb=short
